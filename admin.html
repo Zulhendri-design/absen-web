@@ -4,324 +4,235 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Admin Absensi</title>
-  
-  <!-- SheetJS Library untuk Ekspor Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #f0f2f5; margin: 0; padding: 20px; }
+    body { background-color: #f4f6f9; margin: 0; padding: 20px; }
     .container { max-width: 1100px; margin: 0 auto; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    h2 { margin: 0; color: #333; }
 
-    header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; gap: 10px; }
-    h1 { color: #1a1a1a; margin: 0; font-size: 24px; }
+    .action-btns { display: flex; gap: 10px; }
+    .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; color: white; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn-excel { background-color: #1e7e34; }
+    .btn-excel:hover { background-color: #145a23; }
+    .btn-logout { background-color: #dc3545; }
+    .btn-logout:hover { background-color: #bd2130; }
+    .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; border-radius: 4px; }
+    .btn-delete:hover { background-color: #c0392b; }
 
-    /* Cards Statistik */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-    .card { background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
-    .card h3 { margin: 0; font-size: 14px; color: #666; font-weight: 500; }
-    .card .number { font-size: 28px; font-weight: bold; margin-top: 5px; color: #007bff; }
-    .card.success .number { color: #28a745; }
-    .card.danger .number { color: #dc3545; }
+    .stat-card { background: white; padding: 18px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .stat-card h3 { margin: 0 0 8px; font-size: 12px; color: #6c757d; text-transform: uppercase; }
+    .stat-card .value { font-size: 26px; font-weight: bold; }
 
-    /* Area Kontrol (Filter & Export) */
-    .controls { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .filter-group { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
-    input[type="text"], input[type="date"] { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; }
+    .filter-box { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 10px; flex-wrap: wrap; }
+    .filter-box input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; outline: none; }
+
+    .table-container { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
     
-    .btn { padding: 9px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-excel { background-color: #1d6f42; color: white; }
-    .btn-excel:hover { background-color: #155231; }
-
-    /* Tabel Data */
-    .table-responsive { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-    th, td { padding: 12px 16px; border-bottom: 1px solid #eee; vertical-align: middle; }
-    th { background-color: #f8f9fa; color: #495057; font-weight: 600; white-space: nowrap; }
-    tr:hover { background-color: #f8f9fa; }
-
-    /* Badge Status */
-    .badge { padding: 4px 8px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; }
-    .badge-success { background-color: #d4edda; color: #155724; }
-    .badge-danger { background-color: #f8d7da; color: #721c24; }
-
-    /* Thumbnail Foto */
-    .thumb-img { width: 45px; height: 45px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; transition: transform 0.2s; }
-    .thumb-img:hover { transform: scale(1.1); }
-
-    /* Modal Foto Fullsize */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
-    .modal-content { max-width: 90%; max-height: 80vh; border-radius: 10px; }
-    .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 35px; cursor: pointer; font-weight: bold; }
-    
-    .text-center { text-align: center; }
-    .map-link { color: #007bff; text-decoration: none; font-weight: 500; }
-    .map-link:hover { text-decoration: underline; }
+    .img-selfie { width: 45px; height: 45px; object-fit: cover; border-radius: 50%; border: 1px solid #ddd; }
+    .badge { padding: 4px 8px; border-radius: 12px; font-weight: 600; font-size: 11px; }
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <header>
-      <h1>Dashboard Rekap Absensi</h1>
-      <div style="display: flex; gap: 10px;">
-        <button class="btn btn-excel" onclick="exportKeExcel()">📊 Ekspor Excel</button>
-        <button class="btn" style="background-color: #dc3545; color: white;" onclick="logoutAdmin()">🚪 Logout</button>
-      </div>
-    </header>
-
-    <!-- Cards Ringkasan -->
-    <div class="stats-grid">
-      <div class="card">
-        <h3>TOTAL ABSENSI</h3>
-        <div class="number" id="statTotal">0</div>
-      </div>
-      <div class="card success">
-        <h3>HADIR (DALAM AREA)</h3>
-        <div class="number" id="statHadir">0</div>
-      </div>
-      <div class="card danger">
-        <h3>DITOLAK / LUAR AREA</h3>
-        <div class="number" id="statDitolak">0</div>
-      </div>
-    </div>
-
-    <!-- Filter Data -->
-    <div class="controls">
-      <div class="filter-group">
-        <input type="text" id="filterNama" placeholder="Cari Nama Karyawan..." oninput="terapkanFilter()">
-        <input type="date" id="filterTanggal" onchange="terapkanFilter()">
-        <button class="btn" style="background:#6c757d; color:white;" onclick="resetFilter()">Reset Filter</button>
-      </div>
-    </div>
-
-    <!-- Tabel Absensi -->
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Foto Selfie</th>
-            <th>Nama Karyawan</th>
-            <th>Waktu & Tanggal</th>
-            <th>Jarak Kantor</th>
-            <th>Status</th>
-            <th>Peta Lokasi</th>
-          </tr>
-        </thead>
-        <tbody id="tabelBody">
-          <tr>
-            <td colspan="7" class="text-center" style="padding: 30px; color: #888;">Memuat data absensi...</td>
-          </tr>
-        </tbody>
-      </table>
+<div class="container">
+  <div class="header">
+    <h2>Dashboard Rekap Absensi</h2>
+    <div class="action-btns">
+      <button class="btn btn-excel" onclick="exportToExcel()">📊 Ekspor Excel</button>
+      <button class="btn btn-logout" onclick="logoutAdmin()">🚪 Logout</button>
     </div>
   </div>
 
-  <!-- Modal Pratinjau Foto -->
-  <div id="photoModal" class="modal" onclick="tutupModal()">
-    <span class="close-modal" onclick="tutupModal()">&times;</span>
-    <img class="modal-content" id="imgModal">
+  <div class="stats-grid">
+    <div class="stat-card"><h3>Total Absensi</h3><div class="value" id="totalAbsen" style="color:#007bff">0</div></div>
+    <div class="stat-card"><h3>Hadir (Dalam Area)</h3><div class="value" id="totalHadir" style="color:#28a745">0</div></div>
+    <div class="stat-card"><h3>Ditolak / Luar Area</h3><div class="value" id="totalDitolak" style="color:#dc3545">0</div></div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  <div class="filter-box">
+    <input type="text" id="searchNama" placeholder="Cari Nama Karyawan..." oninput="filterData()">
+    <input type="date" id="searchTanggal" onchange="filterData()">
+    <button class="btn" style="background:#6c757d;" onclick="resetFilter()">Reset Filter</button>
+  </div>
 
-    // Konfigurasi Firebase Project Lampung
-    const firebaseConfig = {
-      apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
-      authDomain: "absensi-lampung.firebaseapp.com",
-      projectId: "absensi-lampung",
-      storageBucket: "absensi-lampung.firebasestorage.app",
-      messagingSenderId: "771796491077",
-      appId: "1:771796491077:web:cbb577ab33755f11ad7c2c",
-      measurementId: "G-FPVFE0E7HF"
-    };
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Foto Selfie</th>
+          <th>Nama Karyawan</th>
+          <th>Waktu & Tanggal</th>
+          <th>Jarak Kantor</th>
+          <th>Status</th>
+          <th>Peta Lokasi</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="tabelBody">
+        <tr><td colspan="8" style="text-align:center;">Memuat data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    let semuaDataAbsensi = [];
+  const firebaseConfig = {
+    apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
+    authDomain: "absensi-lampung.firebaseapp.com",
+    projectId: "absensi-lampung",
+    storageBucket: "absensi-lampung.firebasestorage.app",
+    messagingSenderId: "771796491077",
+    appId: "1:771796491077:web:cbb577ab33755f11ad7c2c",
+    measurementId: "G-FPVFE0E7HF"
+  };
 
-    // 🔒 GUARD: PROTEKSI HALAMAN ADMIN
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // Jika belum login, lempar ke login.html
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  let dataAbsensi = [];
+
+  // Proteksi Halaman Admin
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      window.location.href = "login.html";
+    } else {
+      loadRealtimeData();
+    }
+  });
+
+  window.logoutAdmin = function() {
+    if (confirm("Apakah Anda yakin ingin logout?")) {
+      signOut(auth).then(() => {
         window.location.href = "login.html";
-      } else {
-        // Jika sudah login, load data
-        loadDataAbsensi();
+      });
+    }
+  };
+
+  function loadRealtimeData() {
+    const q = query(collection(db, "absensi_selfie"), orderBy("waktu", "desc"));
+    onSnapshot(q, (snapshot) => {
+      dataAbsensi = [];
+      snapshot.forEach((docSnap) => {
+        dataAbsensi.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderTabel(dataAbsensi);
+    });
+  }
+
+  window.renderTabel = function(data) {
+    const tbody = document.getElementById('tabelBody');
+    tbody.innerHTML = '';
+
+    let hadir = 0;
+    let ditolak = 0;
+
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Tidak ada data absensi.</td></tr>`;
+      document.getElementById('totalAbsen').innerText = 0;
+      document.getElementById('totalHadir').innerText = 0;
+      document.getElementById('totalDitolak').innerText = 0;
+      return;
+    }
+
+    data.forEach((item, index) => {
+      if (item.status && item.status.includes("Hadir")) hadir++;
+      else ditolak++;
+
+      let tgl = "-";
+      let tglIso = "";
+      if (item.waktu) {
+        const d = item.waktu.toDate();
+        tgl = d.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+        tglIso = d.toISOString().split('T')[0];
       }
+
+      const mapUrl = `https://www.google.com/maps?q=${item.latitude},${item.longitude}`;
+      const isHadir = item.status && item.status.includes("Hadir");
+
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-tanggal', tglIso);
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td><img src="${item.fotoUrl || 'https://via.placeholder.com/45'}" class="img-selfie" alt="Selfie"></td>
+        <td><b>${item.nama}</b></td>
+        <td>${tgl}</td>
+        <td>${item.jarakMeter} meter</td>
+        <td><span class="badge ${isHadir ? 'badge-success' : 'badge-danger'}">${item.status}</span></td>
+        <td><a href="${mapUrl}" target="_blank" style="color:#007bff; text-decoration:none;">📍 Lihat Peta</a></td>
+        <td><button class="btn btn-delete" onclick="hapusData('${item.id}', '${item.nama}')">🗑️ Hapus</button></td>
+      `;
+      tbody.appendChild(tr);
     });
 
-    // 🚪 FUNGSI LOGOUT
-    window.logoutAdmin = function() {
-      if (confirm("Apakah Anda yakin ingin keluar dari Dashboard Admin?")) {
-        signOut(auth).then(() => {
-          window.location.href = "login.html";
-        }).catch((error) => {
-          alert("Gagal logout: " + error.message);
-        });
+    document.getElementById('totalAbsen').innerText = data.length;
+    document.getElementById('totalHadir').innerText = hadir;
+    document.getElementById('totalDitolak').innerText = ditolak;
+  };
+
+  // Fungsi Hapus Data Firestore
+  window.hapusData = async function(docId, nama) {
+    if (confirm(`Apakah Anda yakin ingin menghapus data absensi dari "${nama}"?`)) {
+      try {
+        await deleteDoc(doc(db, "absensi_selfie", docId));
+        alert("Data berhasil dihapus!");
+      } catch (err) {
+        alert("Gagal menghapus data: " + err.message);
       }
     }
+  };
 
-    // Mengambil Data Realtime dari Firestore
-    function loadDataAbsensi() {
-      const q = query(collection(db, "absensi_selfie"), orderBy("waktu", "desc"));
+  window.filterData = function() {
+    const namaQuery = document.getElementById('searchNama').value.toLowerCase();
+    const tglQuery = document.getElementById('searchTanggal').value;
 
-      onSnapshot(q, (snapshot) => {
-        semuaDataAbsensi = [];
-        snapshot.forEach((doc) => {
-          const item = doc.data();
-          semuaDataAbsensi.push({
-            id: doc.id,
-            nama: item.nama || "-",
-            waktuObj: item.waktu ? item.waktu.toDate() : new Date(),
-            latitude: item.latitude,
-            longitude: item.longitude,
-            jarakMeter: item.jarakMeter ?? 0,
-            status: item.status || "-",
-            fotoUrl: item.fotoUrl || ""
-          });
-        });
-
-        terapkanFilter();
-      }, (error) => {
-        console.error("Gagal mengambil data:", error);
-        document.getElementById('tabelBody').innerHTML = `<tr><td colspan="7" class="text-center" style="color:red;">Gagal memuat data: ${error.message}</td></tr>`;
-      });
-    }
-
-    // Render Tabel & Update Statistik
-    window.terapkanFilter = function() {
-      const keywordNama = document.getElementById('filterNama').value.toLowerCase();
-      const filterTgl = document.getElementById('filterTanggal').value;
-
-      const dataFiltered = semuaDataAbsensi.filter(item => {
-        const cocokNama = item.nama.toLowerCase().includes(keywordNama);
-        let cocokTanggal = true;
-        if (filterTgl) {
-          const tglItem = item.waktuObj.toISOString().split('T')[0];
-          cocokTanggal = (tglItem === filterTgl);
-        }
-        return cocokNama && cocokTanggal;
-      });
-
-      renderTabel(dataFiltered);
-      updateStatistik(dataFiltered);
-    }
-
-    function renderTabel(data) {
-      const tbody = document.getElementById('tabelBody');
-      tbody.innerHTML = '';
-
-      if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color:#888; padding: 20px;">Tidak ada data absensi yang sesuai.</td></tr>`;
-        return;
+    const filtered = dataAbsensi.filter(item => {
+      const matchNama = item.nama.toLowerCase().includes(namaQuery);
+      let matchTgl = true;
+      if (tglQuery && item.waktu) {
+        const itemTgl = item.waktu.toDate().toISOString().split('T')[0];
+        matchTgl = (itemTgl === tglQuery);
       }
+      return matchNama && matchTgl;
+    });
 
-      data.forEach((item, index) => {
-        const tr = document.createElement('tr');
-        const waktuFormatted = item.waktuObj.toLocaleString('id-ID', {
-          day: '2-digit', month: 'short', year: 'numeric',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
+    renderTabel(filtered);
+  };
 
-        const isHadir = item.status.includes("Hadir");
-        const statusBadge = isHadir 
-          ? `<span class="badge badge-success">${item.status}</span>`
-          : `<span class="badge badge-danger">${item.status}</span>`;
+  window.resetFilter = function() {
+    document.getElementById('searchNama').value = '';
+    document.getElementById('searchTanggal').value = '';
+    renderTabel(dataAbsensi);
+  };
 
-        const imgHtml = item.fotoUrl 
-          ? `<img src="${item.fotoUrl}" class="thumb-img" alt="Selfie" onclick="bukaModal('${item.fotoUrl}')">`
-          : `<span style="color:#aaa;">Tanpa Foto</span>`;
-
-        const mapsLink = (item.latitude && item.longitude)
-          ? `<a href="https://maps.google.com/?q=${item.latitude},${item.longitude}" target="_blank" class="map-link">📍 Lihat Peta</a>`
-          : `-`;
-
-        tr.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${imgHtml}</td>
-          <td><b>${escapeHtml(item.nama)}</b></td>
-          <td>${waktuFormatted}</td>
-          <td>${item.jarakMeter} meter</td>
-          <td>${statusBadge}</td>
-          <td>${mapsLink}</td>
-        `;
-
-        tbody.appendChild(tr);
-      });
+  window.exportToExcel = function() {
+    const table = document.querySelector("table");
+    const cloneTable = table.cloneNode(true);
+    
+    // Hapus kolom Foto dan Aksi saat ekspor ke Excel
+    const rows = cloneTable.rows;
+    for (let i = 0; i < rows.length; i++) {
+      rows[i].deleteCell(7); // Hapus kolom Aksi
+      rows[i].deleteCell(1); // Hapus kolom Foto
     }
 
-    function updateStatistik(data) {
-      const total = data.length;
-      const hadir = data.filter(d => d.status.includes("Hadir")).length;
-      const ditolak = total - hadir;
-
-      document.getElementById('statTotal').innerText = total;
-      document.getElementById('statHadir').innerText = hadir;
-      document.getElementById('statDitolak').innerText = ditolak;
-    }
-
-    window.resetFilter = function() {
-      document.getElementById('filterNama').value = '';
-      document.getElementById('filterTanggal').value = '';
-      terapkanFilter();
-    }
-
-    window.bukaModal = function(url) {
-      document.getElementById('imgModal').src = url;
-      document.getElementById('photoModal').style.display = 'flex';
-    }
-
-    window.tutupModal = function() {
-      document.getElementById('photoModal').style.display = 'none';
-    }
-
-    // Ekspor Excel
-    window.exportKeExcel = function() {
-      const keywordNama = document.getElementById('filterNama').value.toLowerCase();
-      const filterTgl = document.getElementById('filterTanggal').value;
-
-      const dataEkspor = semuaDataAbsensi
-        .filter(item => {
-          const cocokNama = item.nama.toLowerCase().includes(keywordNama);
-          const cocokTanggal = filterTgl ? (item.waktuObj.toISOString().split('T')[0] === filterTgl) : true;
-          return cocokNama && cocokTanggal;
-        })
-        .map((item, idx) => ({
-          "No": idx + 1,
-          "Nama Karyawan": item.nama,
-          "Tanggal & Waktu": item.waktuObj.toLocaleString('id-ID'),
-          "Jarak Kantor (Meter)": item.jarakMeter,
-          "Status Absensi": item.status,
-          "Latitude": item.latitude || "-",
-          "Longitude": item.longitude || "-",
-          "URL Foto Selfie": item.fotoUrl
-        }));
-
-      if (dataEkspor.length === 0) {
-        alert("Tidak ada data untuk diekspor!");
-        return;
-      }
-
-      const worksheet = XLSX.utils.json_to_sheet(dataEkspor);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Absensi");
-
-      const today = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(workbook, `Rekap_Absensi_${today}.xlsx`);
-    }
-
-    function escapeHtml(text) {
-      return text.replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-      });
-    }
-  </script>
+    const wb = XLSX.utils.table_to_book(cloneTable, { sheet: "Absensi Karyawan" });
+    XLSX.writeFile(wb, `Rekap_Absensi_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+</script>
 </body>
 </html>
