@@ -3,22 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Absensi Geofencing + Database</title>
+  <title>Absensi Geofencing + Kamera Selfie</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
-    input { padding: 10px; margin-bottom: 10px; width: 80%; max-width: 300px; }
-    button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; }
-    #status { margin-top: 15px; font-weight: bold; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; text-align: center; background-color: #f4f7f6; }
+    .container { max-width: 400px; margin: 0 auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    h2 { color: #333; margin-bottom: 25px; }
+    input, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+    button { background-color: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+    button:hover { background-color: #218838; }
+    button:disabled { background-color: #6c757d; cursor: not-allowed; }
+    
+    /* Area Kamera & Preview */
+    #camera-area { margin-top: 15px; display: none; }
+    #video { width: 100%; border-radius: 10px; border: 2px solid #ddd; transform: scaleX(-1); } /* Mirror effect */
+    #canvas { display: none; }
+    #preview { width: 100%; border-radius: 10px; margin-top: 10px; display: none; border: 2px solid #28a745; transform: scaleX(-1); }
+    
+    #status { margin-top: 20px; font-weight: bold; font-size: 15px; line-height: 1.5; }
+    .lds-dual-ring { display: inline-block; width: 20px; height: 20px; }
+    .lds-dual-ring:after { content: " "; display: block; width: 16px; height: 16px; margin: 1px; border-radius: 50%; border: 2px solid #fff; border-color: #fff transparent #fff transparent; animation: lds-dual-ring 1.2s linear infinite; }
+    @keyframes lds-dual-ring { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-  <h2>Absensi Kehadiran Online</h2>
-  
-  <input type="text" id="namaUser" placeholder="Masukkan Nama Anda" required><br>
-  <button onclick="prosesAbsen()">Absen Sekarang</button>
-  
-  <p id="status"></p>
+  <div class="container">
+    <h2>Absensi Selfie Online</h2>
+    
+    <input type="text" id="namaUser" placeholder="Masukkan Nama Lengkap Anda" required>
+    
+    <button id="btnAmbilFoto" onclick="persiapanKamera()">Mulai & Ambil Foto</button>
+    
+    <!-- Area Kamera -->
+    <div id="camera-area">
+      <video id="video" autoplay playsinline></video>
+      <button id="btnJepret" style="background-color: #007bff; margin-top: 10px;" onclick="jepretFoto()" disabled>Klik untuk Ambil Gambar</button>
+      <canvas id="canvas"></canvas>
+    </div>
+    
+    <!-- Preview Foto yang Sudah Diambil -->
+    <img id="preview" alt="Preview Foto">
+    
+    <button id="btnAbsenFinal" style="display:none; background-color: #28a745;" onclick="prosesAbsenFinal()">Kirim Absensi</button>
+    
+    <div id="status"></div>
+  </div>
 
   <!-- Load Firebase SDK -->
   <script type="module">
@@ -39,12 +68,70 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Pengaturan Koordinat Kantor & Radius
-    const KANTOR_LAT = -6.175392; // Ganti koordinat kantor kamu
+    // Pengaturan Koordinat Kantor & Radius (Ganti sesuai lokasi kantor kamu)
+    const KANTOR_LAT = -6.175392; // Contoh: Monas, Jakarta
     const KANTOR_LNG = 106.827153;
-    const MAX_RADIUS_METER = 50;
+    const MAX_RADIUS_METER = 50; // Jarak toleransi 50 meter
 
-    // Rumus Haversine
+    let streamKamera = null;
+    let fotoBase64 = null; // Ini untuk menyimpan data teks fotonya
+
+    // A. Fungsi Memulai Kamera
+    window.persiapanKamera = async function() {
+      const nama = document.getElementById('namaUser').value.trim();
+      const status = document.getElementById('status');
+      const cameraArea = document.getElementById('camera-area');
+      const video = document.getElementById('video');
+      const btnJepret = document.getElementById('btnJepret');
+
+      if (!nama) { alert("Harap masukkan nama terlebih dahulu!"); return; }
+
+      status.innerText = "Meminta izin kamera...";
+      cameraArea.style.display = 'block';
+      document.getElementById('btnAmbilFoto').style.display = 'none';
+
+      try {
+        // Minta akses kamera depan (user)
+        streamKamera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        video.srcObject = streamKamera;
+        btnJepret.disabled = false;
+        status.innerText = "Kamera aktif. Silakan jepret foto selfie.";
+      } catch (err) {
+        status.innerText = "Gagal mengakses kamera. Pastikan izin kamera diberikan.";
+        console.error(err);
+      }
+    }
+
+    // B. Fungsi Menjepret Foto (Kamera -> Teks Base64)
+    window.jepretFoto = function() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const preview = document.getElementById('preview');
+      const btnJepret = document.getElementById('btnJepret');
+      const btnAbsenFinal = document.getElementById('btnAbsenFinal');
+      const status = document.getElementById('status');
+
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Ubah canvas menjadi teks Base64 (JPG kualitas 70% agar hemat storage)
+      fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+      // Tampilkan preview, sembunyikan video
+      preview.src = fotoBase64;
+      preview.style.display = 'block';
+      document.getElementById('camera-area').style.display = 'none';
+      btnAbsenFinal.style.display = 'block';
+
+      // Matikan stream kamera (hemat baterai)
+      streamKamera.getTracks().forEach(track => track.stop());
+
+      status.innerText = "Foto berhasil diambil. Klik 'Kirim Absensi' untuk menyelesaikan.";
+    }
+
+    // C. Fungsi Rumus Haversine
     function hitungJarak(lat1, lon1, lat2, lon2) {
       const R = 6371e3;
       const rad = Math.PI / 180;
@@ -56,20 +143,19 @@
       return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 
-    // Fungsi Utama Absen
-    window.prosesAbsen = async function() {
+    // D. Fungsi Final: Gabungkan GPS & Data Foto, Kirim ke Firebase
+    window.prosesAbsenFinal = async function() {
       const nama = document.getElementById('namaUser').value.trim();
       const status = document.getElementById('status');
+      const btnFinal = document.getElementById('btnAbsenFinal');
 
-      if (!nama) {
-        alert("Harap masukkan nama terlebih dahulu!");
-        return;
-      }
-
+      btnFinal.disabled = true;
+      btnFinal.innerHTML = '<div class="lds-dual-ring"></div> Mengirim...';
       status.innerText = "Mendeteksi lokasi & menyimpan data...";
 
       if (!navigator.geolocation) {
         status.innerText = "Browser tidak mendukung Geolocation.";
+        btnFinal.disabled = false;
         return;
       }
 
@@ -81,29 +167,38 @@
           const isHadir = jarak <= MAX_RADIUS_METER;
 
           try {
-            // Simpan Data Ke Firestore Database
-            await addDoc(collection(db, "absensi"), {
+            // SIMPAN SEMUA DATA KE FIRESTORE (Termasuk Foto)
+            await addDoc(collection(db, "absensi_selfie"), {
               nama: nama,
-              waktu: new Date().toISOString(),
+              waktu: new Date(), // Simpan sebagai objek Date (lebih mudah disortir)
               latitude: userLat,
               longitude: userLng,
               jarakMeter: Math.round(jarak),
-              status: isHadir ? "Hadir" : "Gagal (Luar Area)"
+              status: isHadir ? "Hadir" : "Gagal (Luar Area)",
+              foto_selfie: fotoBase64 // Ini teks fotonya
             });
 
             if (isHadir) {
-              status.innerHTML = `<b style="color:green">Absen Berhasil!</b><br>Data tersimpan di database.`;
+              status.innerHTML = `<b style="color:green">Absen Berhasil!</b><br>Terima kasih.`;
+              btnFinal.style.display = 'none';
+              document.getElementById('namaUser').disabled = true;
             } else {
-              status.innerHTML = `<b style="color:red">Absen Ditolak!</b><br>Anda berada ${Math.round(jarak)}m dari lokasi. Data percobaan tetap tercatat.`;
+              status.innerHTML = `<b style="color:red">Absen Ditolak!</b><br>Anda berada ${Math.round(jarak)}m dari kantor (Maks ${MAX_RADIUS_METER}m). Data tetap dicatat.`;
+              btnFinal.disabled = false;
+              btnFinal.innerText = "Coba Kirim Lagi";
             }
           } catch (e) {
             status.innerText = "Gagal menyimpan ke database: " + e.message;
+            btnFinal.disabled = false;
+            btnFinal.innerText = "Coba Kirim Lagi";
           }
         },
         (error) => {
-          status.innerText = "Gagal mengambil lokasi. Pastikan GPS aktif.";
+          status.innerText = "Gagal mengambil lokasi. Pastikan GPS & izin lokasi aktif di browser.";
+          btnFinal.disabled = false;
+          btnFinal.innerText = "Coba Kirim Lagi";
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 } // Pengaturan GPS agar akurat
       );
     }
   </script>
