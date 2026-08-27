@@ -3,129 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Admin Absensi</title>
-  
-  <!-- SheetJS Library untuk Ekspor Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  
+  <title>Absensi Karyawan Lampung</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #f0f2f5; margin: 0; padding: 20px; }
-    .container { max-width: 1100px; margin: 0 auto; }
-
-    header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; gap: 10px; }
-    h1 { color: #1a1a1a; margin: 0; font-size: 24px; }
-
-    /* Cards Statistik */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-    .card { background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
-    .card h3 { margin: 0; font-size: 14px; color: #666; font-weight: 500; }
-    .card .number { font-size: 28px; font-weight: bold; margin-top: 5px; color: #007bff; }
-    .card.success .number { color: #28a745; }
-    .card.danger .number { color: #dc3545; }
-
-    /* Area Kontrol (Filter & Export) */
-    .controls { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .filter-group { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
-    input[type="text"], input[type="date"] { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; }
+    body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
+    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 420px; text-align: center; }
+    h2 { margin-top: 0; color: #333; font-size: 20px; }
+    label { display: block; text-align: left; margin: 10px 0 5px; font-weight: 600; font-size: 13px; color: #555; }
+    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; }
     
-    .btn { padding: 9px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-excel { background-color: #1d6f42; color: white; }
-    .btn-excel:hover { background-color: #155231; }
-
-    /* Tabel Data */
-    .table-responsive { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-    th, td { padding: 12px 16px; border-bottom: 1px solid #eee; vertical-align: middle; }
-    th { background-color: #f8f9fa; color: #495057; font-weight: 600; white-space: nowrap; }
-    tr:hover { background-color: #f8f9fa; }
-
-    /* Badge Status */
-    .badge { padding: 4px 8px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; }
-    .badge-success { background-color: #d4edda; color: #155724; }
-    .badge-danger { background-color: #f8d7da; color: #721c24; }
-
-    /* Thumbnail Foto */
-    .thumb-img { width: 45px; height: 45px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; transition: transform 0.2s; }
-    .thumb-img:hover { transform: scale(1.1); }
-
-    /* Modal Foto Fullsize */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
-    .modal-content { max-width: 90%; max-height: 80vh; border-radius: 10px; }
-    .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 35px; cursor: pointer; font-weight: bold; }
+    .camera-box { margin: 15px 0; background: #222; border-radius: 8px; overflow: hidden; position: relative; min-height: 220px; display: flex; justify-content: center; align-items: center; }
+    video, canvas { width: 100%; height: auto; display: block; border-radius: 8px; }
     
-    .text-center { text-align: center; }
-    .map-link { color: #007bff; text-decoration: none; font-weight: 500; }
-    .map-link:hover { text-decoration: underline; }
+    .btn { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; color: white; }
+    .btn-primary { background-color: #007bff; }
+    .btn-success { background-color: #28a745; }
+    .btn:disabled { background-color: #6c757d; cursor: not-allowed; }
+
+    #status { margin-top: 15px; font-size: 13px; font-weight: 600; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <header>
-      <h1>Dashboard Rekap Absensi</h1>
-      <button class="btn btn-excel" onclick="exportKeExcel()">📊 Ekspor Excel</button>
-    </header>
+  <div class="card">
+    <h2>Form Absensi Selfie</h2>
+    
+    <label for="nama">Nama Karyawan:</label>
+    <input type="text" id="nama" placeholder="Masukkan nama lengkap..." required>
 
-    <!-- Cards Ringkasan -->
-    <div class="stats-grid">
-      <div class="card">
-        <h3>TOTAL ABSENSI</h3>
-        <div class="number" id="statTotal">0</div>
-      </div>
-      <div class="card success">
-        <h3>HADIR (DALAM AREA)</h3>
-        <div class="number" id="statHadir">0</div>
-      </div>
-      <div class="card danger">
-        <h3>DITOLAK / LUAR AREA</h3>
-        <div class="number" id="statDitolak">0</div>
-      </div>
+    <div class="camera-box">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas" style="display:none;"></canvas>
     </div>
 
-    <!-- Filter Data -->
-    <div class="controls">
-      <div class="filter-group">
-        <input type="text" id="filterNama" placeholder="Cari Nama Karyawan..." oninput="terapkanFilter()">
-        <input type="date" id="filterTanggal" onchange="terapkanFilter()">
-        <button class="btn" style="background:#6c757d; color:white;" onclick="resetFilter()">Reset Filter</button>
-      </div>
-    </div>
-
-    <!-- Tabel Absensi -->
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Foto Selfie</th>
-            <th>Nama Karyawan</th>
-            <th>Waktu & Tanggal</th>
-            <th>Jarak Kantor</th>
-            <th>Status</th>
-            <th>Peta Lokasi</th>
-          </tr>
-        </thead>
-        <tbody id="tabelBody">
-          <tr>
-            <td colspan="7" class="text-center" style="padding: 30px; color: #888;">Memuat data absensi...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Modal Pratinjau Foto -->
-  <div id="photoModal" class="modal" onclick="tutupModal()">
-    <span class="close-modal" onclick="tutupModal()">&times;</span>
-    <img class="modal-content" id="imgModal">
+    <button id="btnAbsen" class="btn btn-primary" onclick="prosesAbsen()">📸 Ambil Foto & Absen</button>
+    <div id="status"></div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Konfigurasi Firebase Project Lampung
     const firebaseConfig = {
       apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
       authDomain: "absensi-lampung.firebaseapp.com",
@@ -139,172 +57,93 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let semuaDataAbsensi = [];
+    // Titik Koordinat Kantor Lampung & Toleransi Jarak (Maksimal Meter)
+    const KANTOR_LAT = -5.450000;  // Ganti koordinat kantor sebenarnya
+    const KANTOR_LNG = 105.260000; // Ganti koordinat kantor sebenarnya
+    const MAX_JARAK_METER = 100;
 
-    // Mengambil Data Realtime dari Firestore
-    function loadDataAbsensi() {
-      const q = query(collection(db, "absensi_selfie"), orderBy("waktu", "desc"));
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const statusDiv = document.getElementById('status');
+    const btnAbsen = document.getElementById('btnAbsen');
 
-      onSnapshot(q, (snapshot) => {
-        semuaDataAbsensi = [];
-        snapshot.forEach((doc) => {
-          const item = doc.data();
-          semuaDataAbsensi.push({
-            id: doc.id,
-            nama: item.nama || "-",
-            // Konversi Firestore Timestamp ke Javascript Date
-            waktuObj: item.waktu ? item.waktu.toDate() : new Date(),
-            latitude: item.latitude,
-            longitude: item.longitude,
-            jarakMeter: item.jarakMeter ?? 0,
-            status: item.status || "-",
-            fotoUrl: item.fotoUrl || ""
-          });
-        });
-
-        terapkanFilter();
-      }, (error) => {
-        console.error("Gagal mengambil data:", error);
-        document.getElementById('tabelBody').innerHTML = `<tr><td colspan="7" class="text-center" style="color:red;">Gagal memuat data: ${error.message}</td></tr>`;
-      });
-    }
-
-    // Fungsi Render Tabel & Update Statistik
-    window.terapkanFilter = function() {
-      const keywordNama = document.getElementById('filterNama').value.toLowerCase();
-      const filterTgl = document.getElementById('filterTanggal').value;
-
-      const dataFiltered = semuaDataAbsensi.filter(item => {
-        const cocokNama = item.nama.toLowerCase().includes(keywordNama);
-        
-        let cocokTanggal = true;
-        if (filterTgl) {
-          const tglItem = item.waktuObj.toISOString().split('T')[0];
-          cocokTanggal = (tglItem === filterTgl);
-        }
-
-        return cocokNama && cocokTanggal;
+    // Nyalakan Kamera
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => {
+        statusDiv.style.color = 'red';
+        statusDiv.innerText = 'Gagal mengakses kamera. Izinkan akses kamera browser Anda!';
+        btnAbsen.disabled = true;
       });
 
-      renderTabel(dataFiltered);
-      updateStatistik(dataFiltered);
+    // Hitung Jarak Lokasi (Haversine Formula)
+    function hitungJarak(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return Math.round(R * c);
     }
 
-    function renderTabel(data) {
-      const tbody = document.getElementById('tabelBody');
-      tbody.innerHTML = '';
-
-      if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color:#888; padding: 20px;">Tidak ada data absensi yang sesuai.</td></tr>`;
+    window.prosesAbsen = function() {
+      const nama = document.getElementById('nama').value.trim();
+      if (!nama) {
+        alert('Masukkan Nama Karyawan terlebih dahulu!');
         return;
       }
 
-      data.forEach((item, index) => {
-        const tr = document.createElement('tr');
+      statusDiv.style.color = '#007bff';
+      statusDiv.innerText = 'Memeriksa lokasi GPS...';
+      btnAbsen.disabled = true;
 
-        // Format Tanggal & Jam Bahasa Indonesia
-        const waktuFormatted = item.waktuObj.toLocaleString('id-ID', {
-          day: '2-digit', month: 'short', year: 'numeric',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const jarak = hitungJarak(lat, lng, KANTOR_LAT, KANTOR_LNG);
+          const statusAbsen = (jarak <= MAX_JARAK_METER) ? "Hadir (Dalam Area)" : "Ditolak (Luar Area)";
 
-        const isHadir = item.status.includes("Hadir");
-        const statusBadge = isHadir 
-          ? `<span class="badge badge-success">${item.status}</span>`
-          : `<span class="badge badge-danger">${item.status}</span>`;
+          statusDiv.innerText = 'Mengambil gambar & mengirim data...';
 
-        const imgHtml = item.fotoUrl 
-          ? `<img src="${item.fotoUrl}" class="thumb-img" alt="Selfie" onclick="bukaModal('${item.fotoUrl}')">`
-          : `<span style="color:#aaa;">Tanpa Foto</span>`;
+          // Tangkap gambar dari video webcam
+          const context = canvas.getContext('2d');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
 
-        const mapsLink = (item.latitude && item.longitude)
-          ? `<a href="https://maps.google.com/?q=${item.latitude},${item.longitude}" target="_blank" class="map-link">📍 Lihat Peta</a>`
-          : `-`;
+          try {
+            await addDoc(collection(db, "absensi_selfie"), {
+              nama: nama,
+              latitude: lat,
+              longitude: lng,
+              jarakMeter: jarak,
+              status: statusAbsen,
+              fotoUrl: fotoBase64,
+              waktu: serverTimestamp()
+            });
 
-        tr.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${imgHtml}</td>
-          <td><b>${escapeHtml(item.nama)}</b></td>
-          <td>${waktuFormatted}</td>
-          <td>${item.jarakMeter} meter</td>
-          <td>${statusBadge}</td>
-          <td>${mapsLink}</td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-    }
-
-    function updateStatistik(data) {
-      const total = data.length;
-      const hadir = data.filter(d => d.status.includes("Hadir")).length;
-      const ditolak = total - hadir;
-
-      document.getElementById('statTotal').innerText = total;
-      document.getElementById('statHadir').innerText = hadir;
-      document.getElementById('statDitolak').innerText = ditolak;
-    }
-
-    window.resetFilter = function() {
-      document.getElementById('filterNama').value = '';
-      document.getElementById('filterTanggal').value = '';
-      terapkanFilter();
-    }
-
-    // Modal Foto Fullsize
-    window.bukaModal = function(url) {
-      document.getElementById('imgModal').src = url;
-      document.getElementById('photoModal').style.display = 'flex';
-    }
-
-    window.tutupModal = function() {
-      document.getElementById('photoModal').style.display = 'none';
-    }
-
-    // Ekspor Data Ke File Excel (.xlsx)
-    window.exportKeExcel = function() {
-      const keywordNama = document.getElementById('filterNama').value.toLowerCase();
-      const filterTgl = document.getElementById('filterTanggal').value;
-
-      const dataEkspor = semuaDataAbsensi
-        .filter(item => {
-          const cocokNama = item.nama.toLowerCase().includes(keywordNama);
-          const cocokTanggal = filterTgl ? (item.waktuObj.toISOString().split('T')[0] === filterTgl) : true;
-          return cocokNama && cocokTanggal;
-        })
-        .map((item, idx) => ({
-          "No": idx + 1,
-          "Nama Karyawan": item.nama,
-          "Tanggal & Waktu": item.waktuObj.toLocaleString('id-ID'),
-          "Jarak Kantor (Meter)": item.jarakMeter,
-          "Status Absensi": item.status,
-          "Latitude": item.latitude || "-",
-          "Longitude": item.longitude || "-",
-          "URL Foto Selfie": item.fotoUrl
-        }));
-
-      if (dataEkspor.length === 0) {
-        alert("Tidak ada data untuk diekspor!");
-        return;
-      }
-
-      const worksheet = XLSX.utils.json_to_sheet(dataEkspor);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Absensi");
-
-      // Auto file name berdasarkan tanggal hari ini
-      const today = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(workbook, `Rekap_Absensi_${today}.xlsx`);
-    }
-
-    function escapeHtml(text) {
-      return text.replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-      });
-    }
-
-    // Jalankan Load Data saat halaman dibuka
-    loadDataAbsensi();
+            statusDiv.style.color = (jarak <= MAX_JARAK_METER) ? 'green' : 'red';
+            statusDiv.innerText = `Absensi Berhasil! Status: ${statusAbsen} (${jarak} meter dari kantor).`;
+            document.getElementById('nama').value = '';
+          } catch (err) {
+            statusDiv.style.color = 'red';
+            statusDiv.innerText = 'Gagal menyimpan absensi: ' + err.message;
+          } finally {
+            btnAbsen.disabled = false;
+          }
+        },
+        (err) => {
+          statusDiv.style.color = 'red';
+          statusDiv.innerText = 'Akses GPS ditolak / tidak aktif! Pastikan GPS HP/Laptop menyala.';
+          btnAbsen.disabled = false;
+        },
+        { enableHighAccuracy: true }
+      );
+    };
   </script>
 </body>
 </html>
