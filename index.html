@@ -3,63 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Absensi Geofencing</title>
+  <title>Absensi Geofencing + Database</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+    input { padding: 10px; margin-bottom: 10px; width: 80%; max-width: 300px; }
+    button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; }
+    #status { margin-top: 15px; font-weight: bold; }
+  </style>
 </head>
 <body>
-  <h2>Absensi Kehadiran</h2>
+
+  <h2>Absensi Kehadiran Online</h2>
+  
+  <input type="text" id="namaUser" placeholder="Masukkan Nama Anda" required><br>
   <button onclick="prosesAbsen()">Absen Sekarang</button>
+  
   <p id="status"></p>
 
-  <script>
-    // 1. Tentukan Koordinat Kantor & Radius Maksimal (Meter)
-    const KANTOR_LAT = -6.175392;  // Contoh: Monas, Jakarta
-    const KANTOR_LNG = 106.827153;
-    const MAX_RADIUS_METER = 50;   // Maksimal 50 meter dari kantor
+  <!-- Load Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // 2. Rumus Haversine (Hitung Jarak 2 Titik Koordinat)
+    // 1. MASUKKAN CONFIG FIREBASE KAMU DI SINI
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Pengaturan Koordinat Kantor & Radius
+    const KANTOR_LAT = -6.175392; // Ganti koordinat kantor kamu
+    const KANTOR_LNG = 106.827153;
+    const MAX_RADIUS_METER = 50;
+
+    // Rumus Haversine
     function hitungJarak(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; // Radius bumi dalam meter
+      const R = 6371e3;
       const rad = Math.PI / 180;
       const dLat = (lat2 - lat1) * rad;
       const dLon = (lon2 - lon1) * rad;
-
       const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                 Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-      return R * c; // Hasil dalam satuan meter
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 
-    // 3. Fungsi Utama Absen
-    function prosesAbsen() {
+    // Fungsi Utama Absen
+    window.prosesAbsen = async function() {
+      const nama = document.getElementById('namaUser').value.trim();
       const status = document.getElementById('status');
-      status.innerText = "Mendeteksi lokasi...";
 
-      if (!navigator.geolocation) {
-        status.innerText = "Browser kamu tidak mendukung Geolocation.";
+      if (!nama) {
+        alert("Harap masukkan nama terlebih dahulu!");
         return;
       }
 
-      // Ambil lokasi GPS HP (highAccuracy = true agar lebih presisi)
+      status.innerText = "Mendeteksi lokasi & menyimpan data...";
+
+      if (!navigator.geolocation) {
+        status.innerText = "Browser tidak mendukung Geolocation.";
+        return;
+      }
+
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const userLat = position.coords.latitude;
           const userLng = position.coords.longitude;
-          const akurasi = position.coords.accuracy; // Akurasi sinyal dalam meter
-
           const jarak = hitungJarak(userLat, userLng, KANTOR_LAT, KANTOR_LNG);
+          const isHadir = jarak <= MAX_RADIUS_METER;
 
-          if (jarak <= MAX_RADIUS_METER) {
-            status.innerHTML = `<b style="color:green">Absen Berhasil!</b><br>Jarak Anda: ${jarak.toFixed(1)}m dari kantor (Akurasi GPS: +/- ${akurasi.toFixed(1)}m)`;
-          } else {
-            status.innerHTML = `<b style="color:red">Absen Ditolak!</b><br>Anda berada ${jarak.toFixed(1)}m dari kantor (Maksimal ${MAX_RADIUS_METER}m).`;
+          try {
+            // Simpan Data Ke Firestore Database
+            await addDoc(collection(db, "absensi"), {
+              nama: nama,
+              waktu: new Date().toISOString(),
+              latitude: userLat,
+              longitude: userLng,
+              jarakMeter: Math.round(jarak),
+              status: isHadir ? "Hadir" : "Gagal (Luar Area)"
+            });
+
+            if (isHadir) {
+              status.innerHTML = `<b style="color:green">Absen Berhasil!</b><br>Data tersimpan di database.`;
+            } else {
+              status.innerHTML = `<b style="color:red">Absen Ditolak!</b><br>Anda berada ${Math.round(jarak)}m dari lokasi. Data percobaan tetap tercatat.`;
+            }
+          } catch (e) {
+            status.innerText = "Gagal menyimpan ke database: " + e.message;
           }
         },
         (error) => {
-          status.innerText = "Gagal mengambil lokasi. Pastikan GPS/Izin Lokasi aktif.";
+          status.innerText = "Gagal mengambil lokasi. Pastikan GPS aktif.";
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        { enableHighAccuracy: true }
       );
     }
   </script>
