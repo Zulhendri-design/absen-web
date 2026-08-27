@@ -1,7 +1,88 @@
-<header>
-      <h1>Dashboard Rekap Absensi</h1>
-      <div style="display: flex; gap: 10px;">
-        <button class="btn btn-excel" onclick="exportKeExcel()">📊 Ekspor Excel</button>
-        <button class="btn" style="background-color: #dc3545; color: white;" onclick="logoutAdmin()">🚪 Logout</button>
-      </div>
-    </header>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Admin Absensi</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .login-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 360px; text-align: center; }
+    h2 { margin-bottom: 20px; color: #333; }
+    input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+    input:focus { border-color: #007bff; }
+    button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; }
+    button:hover { background-color: #0056b3; }
+    button:disabled { background-color: #6c757d; cursor: not-allowed; }
+    #status { margin-top: 15px; font-size: 14px; color: #dc3545; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+    <h2>Login Admin</h2>
+    <input type="email" id="email" placeholder="Email Admin" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button id="btnLogin" onclick="loginAdmin()">Masuk ke Dashboard</button>
+    <div id="status"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
+      authDomain: "absensi-lampung.firebaseapp.com",
+      projectId: "absensi-lampung",
+      storageBucket: "absensi-lampung.firebasestorage.app",
+      messagingSenderId: "771796491077",
+      appId: "1:771796491077:web:cbb577ab33755f11ad7c2c",
+      measurementId: "G-FPVFE0E7HF"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Cek jika sudah login, langsung lempar ke admin.html
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = "admin.html";
+      }
+    });
+
+    window.loginAdmin = function() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const statusDiv = document.getElementById('status');
+      const btnLogin = document.getElementById('btnLogin');
+
+      if (!email || !password) {
+        statusDiv.innerText = "Email dan Password wajib diisi!";
+        return;
+      }
+
+      statusDiv.style.color = "#007bff";
+      statusDiv.innerText = "Memeriksa data...";
+      btnLogin.disabled = true;
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          statusDiv.style.color = "#28a745";
+          statusDiv.innerText = "Login berhasil! Mengalihkan...";
+          window.location.href = "admin.html";
+        })
+        .catch((error) => {
+          btnLogin.disabled = false;
+          statusDiv.style.color = "#dc3545";
+          if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+            statusDiv.innerText = "Email atau Password salah!";
+          } else {
+            statusDiv.innerText = "Gagal login: " + error.message;
+          }
+        });
+    }
+  </script>
+
+</body>
+</html>
