@@ -121,7 +121,6 @@
       </div>
     </div>
 
-    <!-- CARDS STATISTIK -->
     <div class="cards">
       <div class="card">
         <h4>Total Rekap</h4>
@@ -137,14 +136,12 @@
       </div>
     </div>
 
-    <!-- FILTER -->
     <div class="filter-box">
       <input type="text" id="filterNama" placeholder="Cari Nama Karyawan..." oninput="filterData()">
       <input type="date" id="filterTanggal" onchange="filterData()">
       <button class="btn-reset" onclick="resetFilter()">Reset Filter</button>
     </div>
 
-    <!-- TABEL REKAP -->
     <table>
       <thead>
         <tr>
@@ -168,7 +165,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
@@ -195,49 +192,58 @@
     };
 
     function loadData() {
-      const q = query(collection(db, "absensi"), orderBy("created_at", "asc"));
-      onSnapshot(q, (snapshot) => {
+      // Mengambil data secara real-time tanpa filter query ketat agar mencegah error
+      onSnapshot(collection(db, "absensi"), (snapshot) => {
         rawData = [];
         snapshot.forEach((docSnap) => {
           rawData.push({ id: docSnap.id, ...docSnap.data() });
         });
+        
+        // Urutkan manual berdasarkan tanggal/waktu
+        rawData.sort((a, b) => {
+          let tA = a.created_at ? (a.created_at.seconds || 0) : 0;
+          let tB = b.created_at ? (b.created_at.seconds || 0) : 0;
+          return tA - tB;
+        });
+
         prosesKelompokData();
+      }, (err) => {
+        console.error("Gagal load data: ", err);
+        document.getElementById("tabelAbsensi").innerHTML = `<tr><td colspan="10" style="color:red;">Gagal memuat data: ${err.message}</td></tr>`;
       });
     }
 
-    // Mengelompokkan data berdasarkan Nama + Tanggal (agar Masuk & Pulang jadi 1 baris)
     function prosesKelompokData() {
       let mapData = {};
 
       rawData.forEach((d) => {
-        // Ambil tanggal & jam dari format atau timestamp
-        let tgl = d.tanggal || (d.created_at ? new Date(d.created_at.seconds * 1000).toISOString().split('T')[0] : '-');
-        let jam = d.jam || (d.created_at ? new Date(d.created_at.seconds * 1000).toLocaleTimeString("id-ID", {hour: '2-digit', minute:'2-digit'}) : '-');
+        let tgl = d.tanggal || (d.waktu ? d.waktu.split(',')[0] : '-') || '-';
+        let jam = d.jam || (d.waktu ? d.waktu.split(',')[1] : '-') || '-';
+        let nama = d.nama || d.namaKaryawan || 'Tanpa Nama';
         
-        let key = `${d.nama}_${tgl}`;
+        let key = `${nama}_${tgl}`;
 
         if (!mapData[key]) {
           mapData[key] = {
             id_masuk: d.id,
             id_pulang: null,
-            nama: d.nama,
+            nama: nama,
             tanggal: tgl,
             jam_masuk: jam,
             jam_pulang: "-",
-            foto: d.foto || d.selfie || "",
-            jarak: d.jarak || "-",
+            foto: d.foto || d.selfie || d.fotoSelfie || "",
+            jarak: d.jarak || d.jarakKantor || "-",
             status: d.status || "Hadir",
             lat: d.lat || d.latitude,
             lng: d.lng || d.longitude
           };
         } else {
-          // Jika sudah ada absen masuk, maka absen berikutnya di tanggal yang sama diisi sebagai Jam Pulang
           mapData[key].jam_pulang = jam;
           mapData[key].id_pulang = d.id;
         }
       });
 
-      processedData = Object.values(mapData).reverse(); // Urutkan dari yang terbaru
+      processedData = Object.values(mapData).reverse();
       tampilkanTabel(processedData);
     }
 
@@ -260,9 +266,11 @@
             ? `<a href="https://maps.google.com/?q=${d.lat},${d.lng}" target="_blank">📍 Lihat Peta</a>`
             : `-`;
 
+          let fotoSrc = d.foto && d.foto.length > 20 ? d.foto : 'https://via.placeholder.com/45';
+
           isi += `<tr>
             <td>${index + 1}</td>
-            <td><img src="${d.foto || 'https://via.placeholder.com/45'}" class="img-selfie"></td>
+            <td><img src="${fotoSrc}" class="img-selfie" onerror="this.src='https://via.placeholder.com/45'"></td>
             <td><b>${d.nama}</b></td>
             <td>${d.tanggal}</td>
             <td><span class="badge badge-masuk">🟢 ${d.jam_masuk}</span></td>
