@@ -3,236 +3,326 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Admin Absensi</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <title>Dashboard Rekap Absensi</title>
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #f4f6f9; margin: 0; padding: 20px; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    h2 { margin: 0; color: #333; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f6f9;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
 
-    .action-btns { display: flex; gap: 10px; }
-    .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; color: white; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-    .btn-excel { background-color: #1e7e34; }
-    .btn-excel:hover { background-color: #145a23; }
-    .btn-logout { background-color: #dc3545; }
-    .btn-logout:hover { background-color: #bd2130; }
-    .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; border-radius: 4px; }
-    .btn-delete:hover { background-color: #c0392b; }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-    .stat-card { background: white; padding: 18px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .stat-card h3 { margin: 0 0 8px; font-size: 12px; color: #6c757d; text-transform: uppercase; }
-    .stat-card .value { font-size: 26px; font-weight: bold; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
 
-    .filter-box { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 10px; flex-wrap: wrap; }
-    .filter-box input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; outline: none; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
 
-    .table-container { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-    th, td { padding: 12px 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
-    th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
-    
-    .img-selfie { width: 45px; height: 45px; object-fit: cover; border-radius: 50%; border: 1px solid #ddd; }
-    .badge { padding: 4px 8px; border-radius: 12px; font-weight: 600; font-size: 11px; }
-    .badge-success { background: #d4edda; color: #155724; }
-    .badge-danger { background: #f8d7da; color: #721c24; }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+
+    .card h4 { margin: 0; font-size: 13px; color: #666; text-transform: uppercase; }
+    .card .num { font-size: 28px; font-weight: bold; margin-top: 10px; color: #2563eb; }
+
+    .filter-box {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    input, button {
+      padding: 10px 15px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      outline: none;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: bold;
+      border: none;
+    }
+
+    .btn-excel { background: #16a34a; color: white; }
+    .btn-logout { background: #dc2626; color: white; }
+    .btn-reset { background: #64748b; color: white; }
+    .btn-hapus { background: #dc2626; color: white; padding: 6px 12px; border-radius: 5px; }
+
+    table {
+      width: 100%;
+      background: white;
+      border-collapse: collapse;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+
+    th { background: #f8fafc; color: #475569; }
+
+    .img-selfie {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #ccc;
+    }
+
+    .badge {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .badge-masuk { background: #dcfce7; color: #166534; }
+    .badge-pulang { background: #dbeafe; color: #1e40af; }
+    .badge-ditolak { background: #fee2e2; color: #991b1b; }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="header">
-    <h2>Dashboard Rekap Absensi</h2>
-    <div class="action-btns">
-      <button class="btn btn-excel" onclick="exportToExcel()">📊 Ekspor Excel</button>
-      <button class="btn btn-logout" onclick="logoutAdmin()">🚪 Logout</button>
+  <div class="container">
+    <div class="header">
+      <h2>Dashboard Rekap Absensi Karyawan</h2>
+      <div>
+        <button class="btn-excel" onclick="downloadExcel()">📊 Ekspor Excel</button>
+        <button class="btn-logout" onclick="logout()">🚪 Logout</button>
+      </div>
     </div>
-  </div>
 
-  <div class="stats-grid">
-    <div class="stat-card"><h3>Total Absensi</h3><div class="value" id="totalAbsen" style="color:#007bff">0</div></div>
-    <div class="stat-card"><h3>Hadir (Dalam Area)</h3><div class="value" id="totalHadir" style="color:#28a745">0</div></div>
-    <div class="stat-card"><h3>Ditolak / Luar Area</h3><div class="value" id="totalDitolak" style="color:#dc3545">0</div></div>
-  </div>
+    <!-- CARDS STATISTIK -->
+    <div class="cards">
+      <div class="card">
+        <h4>Total Rekap</h4>
+        <div class="num" id="totalAbsen">0</div>
+      </div>
+      <div class="card">
+        <h4>Hadir (Dalam Area)</h4>
+        <div class="num" style="color:#16a34a;" id="totalHadir">0</div>
+      </div>
+      <div class="card">
+        <h4>Ditolak / Luar Area</h4>
+        <div class="num" style="color:#dc2626;" id="totalDitolak">0</div>
+      </div>
+    </div>
 
-  <div class="filter-box">
-    <input type="text" id="searchNama" placeholder="Cari Nama Karyawan..." oninput="filterData()">
-    <input type="date" id="searchTanggal" onchange="filterData()">
-    <button class="btn" style="background:#6c757d;" onclick="resetFilter()">Reset Filter</button>
-  </div>
+    <!-- FILTER -->
+    <div class="filter-box">
+      <input type="text" id="filterNama" placeholder="Cari Nama Karyawan..." oninput="filterData()">
+      <input type="date" id="filterTanggal" onchange="filterData()">
+      <button class="btn-reset" onclick="resetFilter()">Reset Filter</button>
+    </div>
 
-  <div class="table-container">
+    <!-- TABEL REKAP -->
     <table>
       <thead>
         <tr>
           <th>No</th>
-          <th>Foto Selfie</th>
+          <th>Foto</th>
           <th>Nama Karyawan</th>
-          <th>Waktu & Tanggal</th>
+          <th>Tanggal</th>
+          <th>Jam Masuk</th>
+          <th>Jam Pulang</th>
           <th>Jarak Kantor</th>
           <th>Status</th>
           <th>Peta Lokasi</th>
           <th>Aksi</th>
         </tr>
       </thead>
-      <tbody id="tabelBody">
-        <tr><td colspan="8" style="text-align:center;">Memuat data...</td></tr>
+      <tbody id="tabelAbsensi">
+        <tr><td colspan="10">Memuat data absensi...</td></tr>
       </tbody>
     </table>
   </div>
-</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
-    authDomain: "absensi-lampung.firebaseapp.com",
-    projectId: "absensi-lampung",
-    storageBucket: "absensi-lampung.firebasestorage.app",
-    messagingSenderId: "771796491077",
-    appId: "1:771796491077:web:cbb577ab33755f11ad7c2c",
-    measurementId: "G-FPVFE0E7HF"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
+      authDomain: "absensi-lampung.firebaseapp.com",
+      projectId: "absensi-lampung",
+      storageBucket: "absensi-lampung.firebasestorage.app",
+      messagingSenderId: "771796491077",
+      appId: "1:771796491077:web:cbb577ab33755f11ad7c2c",
+      measurementId: "G-FPVFE0E7HF"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  let dataAbsensi = [];
+    let rawData = [];
+    let processedData = [];
 
-  // Proteksi Halaman Admin
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      window.location.href = "login.html";
-    } else {
-      loadRealtimeData();
-    }
-  });
+    window.onload = function() {
+      loadData();
+    };
 
-  window.logoutAdmin = function() {
-    if (confirm("Apakah Anda yakin ingin logout?")) {
-      signOut(auth).then(() => {
-        window.location.href = "login.html";
+    window.logout = function() {
+      window.location.href = "index.html";
+    };
+
+    function loadData() {
+      const q = query(collection(db, "absensi"), orderBy("created_at", "asc"));
+      onSnapshot(q, (snapshot) => {
+        rawData = [];
+        snapshot.forEach((docSnap) => {
+          rawData.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        prosesKelompokData();
       });
     }
-  };
 
-  function loadRealtimeData() {
-    const q = query(collection(db, "absensi_selfie"), orderBy("waktu", "desc"));
-    onSnapshot(q, (snapshot) => {
-      dataAbsensi = [];
-      snapshot.forEach((docSnap) => {
-        dataAbsensi.push({ id: docSnap.id, ...docSnap.data() });
+    // Mengelompokkan data berdasarkan Nama + Tanggal (agar Masuk & Pulang jadi 1 baris)
+    function prosesKelompokData() {
+      let mapData = {};
+
+      rawData.forEach((d) => {
+        // Ambil tanggal & jam dari format atau timestamp
+        let tgl = d.tanggal || (d.created_at ? new Date(d.created_at.seconds * 1000).toISOString().split('T')[0] : '-');
+        let jam = d.jam || (d.created_at ? new Date(d.created_at.seconds * 1000).toLocaleTimeString("id-ID", {hour: '2-digit', minute:'2-digit'}) : '-');
+        
+        let key = `${d.nama}_${tgl}`;
+
+        if (!mapData[key]) {
+          mapData[key] = {
+            id_masuk: d.id,
+            id_pulang: null,
+            nama: d.nama,
+            tanggal: tgl,
+            jam_masuk: jam,
+            jam_pulang: "-",
+            foto: d.foto || d.selfie || "",
+            jarak: d.jarak || "-",
+            status: d.status || "Hadir",
+            lat: d.lat || d.latitude,
+            lng: d.lng || d.longitude
+          };
+        } else {
+          // Jika sudah ada absen masuk, maka absen berikutnya di tanggal yang sama diisi sebagai Jam Pulang
+          mapData[key].jam_pulang = jam;
+          mapData[key].id_pulang = d.id;
+        }
       });
-      renderTabel(dataAbsensi);
-    });
-  }
 
-  window.renderTabel = function(data) {
-    const tbody = document.getElementById('tabelBody');
-    tbody.innerHTML = '';
-
-    let hadir = 0;
-    let ditolak = 0;
-
-    if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Tidak ada data absensi.</td></tr>`;
-      document.getElementById('totalAbsen').innerText = 0;
-      document.getElementById('totalHadir').innerText = 0;
-      document.getElementById('totalDitolak').innerText = 0;
-      return;
+      processedData = Object.values(mapData).reverse(); // Urutkan dari yang terbaru
+      tampilkanTabel(processedData);
     }
 
-    data.forEach((item, index) => {
-      if (item.status && item.status.includes("Hadir")) hadir++;
-      else ditolak++;
+    function tampilkanTabel(data) {
+      let isi = "";
+      let countHadir = 0;
+      let countDitolak = 0;
 
-      let tgl = "-";
-      let tglIso = "";
-      if (item.waktu) {
-        const d = item.waktu.toDate();
-        tgl = d.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
-        tglIso = d.toISOString().split('T')[0];
+      if (data.length === 0) {
+        isi = `<tr><td colspan="10">Belum ada data absensi.</td></tr>`;
+      } else {
+        data.forEach((d, index) => {
+          if (d.status.includes("Ditolak") || d.status.includes("Luar")) {
+            countDitolak++;
+          } else {
+            countHadir++;
+          }
+
+          let lokasiBtn = (d.lat && d.lng) 
+            ? `<a href="https://maps.google.com/?q=${d.lat},${d.lng}" target="_blank">📍 Lihat Peta</a>`
+            : `-`;
+
+          isi += `<tr>
+            <td>${index + 1}</td>
+            <td><img src="${d.foto || 'https://via.placeholder.com/45'}" class="img-selfie"></td>
+            <td><b>${d.nama}</b></td>
+            <td>${d.tanggal}</td>
+            <td><span class="badge badge-masuk">🟢 ${d.jam_masuk}</span></td>
+            <td><span class="badge badge-pulang">🔴 ${d.jam_pulang}</span></td>
+            <td>${d.jarak}</td>
+            <td><span class="badge ${d.status.includes('Ditolak') ? 'badge-ditolak' : 'badge-masuk'}">${d.status}</span></td>
+            <td>${lokasiBtn}</td>
+            <td><button class="btn-hapus" onclick="hapusBaris('${d.id_masuk}', '${d.id_pulang}')">Hapus</button></td>
+          </tr>`;
+        });
       }
 
-      const mapUrl = `https://www.google.com/maps?q=${item.latitude},${item.longitude}`;
-      const isHadir = item.status && item.status.includes("Hadir");
-
-      const tr = document.createElement('tr');
-      tr.setAttribute('data-tanggal', tglIso);
-      tr.innerHTML = `
-        <td>${index + 1}</td>
-        <td><img src="${item.fotoUrl || 'https://via.placeholder.com/45'}" class="img-selfie" alt="Selfie"></td>
-        <td><b>${item.nama}</b></td>
-        <td>${tgl}</td>
-        <td>${item.jarakMeter} meter</td>
-        <td><span class="badge ${isHadir ? 'badge-success' : 'badge-danger'}">${item.status}</span></td>
-        <td><a href="${mapUrl}" target="_blank" style="color:#007bff; text-decoration:none;">📍 Lihat Peta</a></td>
-        <td><button class="btn btn-delete" onclick="hapusData('${item.id}', '${item.nama}')">🗑️ Hapus</button></td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById('totalAbsen').innerText = data.length;
-    document.getElementById('totalHadir').innerText = hadir;
-    document.getElementById('totalDitolak').innerText = ditolak;
-  };
-
-  // Fungsi Hapus Data Firestore
-  window.hapusData = async function(docId, nama) {
-    if (confirm(`Apakah Anda yakin ingin menghapus data absensi dari "${nama}"?`)) {
-      try {
-        await deleteDoc(doc(db, "absensi_selfie", docId));
-        alert("Data berhasil dihapus!");
-      } catch (err) {
-        alert("Gagal menghapus data: " + err.message);
-      }
-    }
-  };
-
-  window.filterData = function() {
-    const namaQuery = document.getElementById('searchNama').value.toLowerCase();
-    const tglQuery = document.getElementById('searchTanggal').value;
-
-    const filtered = dataAbsensi.filter(item => {
-      const matchNama = item.nama.toLowerCase().includes(namaQuery);
-      let matchTgl = true;
-      if (tglQuery && item.waktu) {
-        const itemTgl = item.waktu.toDate().toISOString().split('T')[0];
-        matchTgl = (itemTgl === tglQuery);
-      }
-      return matchNama && matchTgl;
-    });
-
-    renderTabel(filtered);
-  };
-
-  window.resetFilter = function() {
-    document.getElementById('searchNama').value = '';
-    document.getElementById('searchTanggal').value = '';
-    renderTabel(dataAbsensi);
-  };
-
-  window.exportToExcel = function() {
-    const table = document.querySelector("table");
-    const cloneTable = table.cloneNode(true);
-    
-    // Hapus kolom Foto dan Aksi saat ekspor ke Excel
-    const rows = cloneTable.rows;
-    for (let i = 0; i < rows.length; i++) {
-      rows[i].deleteCell(7); // Hapus kolom Aksi
-      rows[i].deleteCell(1); // Hapus kolom Foto
+      document.getElementById("tabelAbsensi").innerHTML = isi;
+      document.getElementById("totalAbsen").innerText = data.length;
+      document.getElementById("totalHadir").innerText = countHadir;
+      document.getElementById("totalDitolak").innerText = countDitolak;
     }
 
-    const wb = XLSX.utils.table_to_book(cloneTable, { sheet: "Absensi Karyawan" });
-    XLSX.writeFile(wb, `Rekap_Absensi_${new Date().toISOString().split('T')[0]}.xlsx`);
-  };
-</script>
+    window.filterData = function() {
+      let nama = document.getElementById("filterNama").value.toLowerCase();
+      let tgl = document.getElementById("filterTanggal").value;
+
+      let filtered = processedData.filter(d => {
+        let matchNama = d.nama.toLowerCase().includes(nama);
+        let matchTgl = tgl ? d.tanggal === tgl : true;
+        return matchNama && matchTgl;
+      });
+
+      tampilkanTabel(filtered);
+    };
+
+    window.resetFilter = function() {
+      document.getElementById("filterNama").value = "";
+      document.getElementById("filterTanggal").value = "";
+      tampilkanTabel(processedData);
+    };
+
+    window.hapusBaris = async function(idMasuk, idPulang) {
+      if (confirm("Hapus data absensi ini?")) {
+        try {
+          if (idMasuk) await deleteDoc(doc(db, "absensi", idMasuk));
+          if (idPulang) await deleteDoc(doc(db, "absensi", idPulang));
+        } catch (e) {
+          alert("Gagal menghapus: " + e.message);
+        }
+      }
+    };
+
+    window.downloadExcel = function() {
+      if (processedData.length === 0) return alert("Tidak ada data!");
+      let csv = "Nama,Tanggal,Jam Masuk,Jam Pulang,Jarak,Status\n";
+      processedData.forEach(d => {
+        csv += `"${d.nama}","${d.tanggal}","${d.jam_masuk}","${d.jam_pulang}","${d.jarak}","${d.status}"\n`;
+      });
+      let blob = new Blob([csv], { type: 'text/csv' });
+      let a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Rekap_Absensi.csv`;
+      a.click();
+    };
+  </script>
 </body>
 </html>
