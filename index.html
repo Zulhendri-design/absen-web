@@ -1,12 +1,114 @@
-function login() {
-  let user = document.getElementById("username").value.trim();
-  let pass = document.getElementById("password").value.trim();
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Admin - Absensi</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-  // Sesuaikan username & password milikmu
-  if (user === "admin" && pass === "Elmijimo") {
-    sessionStorage.setItem("isLoggedIn", "true"); // SIMPAN STATUS LOGIN
-    window.location.href = "admin.html"; // MASUK KE ADMIN
-  } else {
-    alert("Username atau Password salah!");
-  }
-}
+    .login-box {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      border: 1px solid #334155;
+    }
+
+    .login-box h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #f8fafc;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 5px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: white;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: #3b82f6;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-box">
+    <h2>🔐 LOGIN ADMIN</h2>
+    <form id="loginForm" onsubmit="login(event)">
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="Masukkan Username" required>
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Masukkan Password" required>
+      </div>
+      <button type="submit">LOGIN</button>
+    </form>
+  </div>
+
+  <script>
+    function login(event) {
+      event.preventDefault(); // Mencegah reload halaman saat submit
+      
+      let user = document.getElementById("username").value.trim();
+      let pass = document.getElementById("password").value.trim();
+
+      if (user === "admin" && pass === "Elmijimo") {
+        sessionStorage.setItem("isLoggedIn", "true"); // Simpan status sesi login
+        window.location.href = "admin.html"; // Masuk ke halaman admin
+      } else {
+        alert("Username atau Password salah!");
+      }
+    }
+  </script>
+
+</body>
+</html>
