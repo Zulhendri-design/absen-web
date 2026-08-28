@@ -184,22 +184,30 @@
     let processedData = [];
 
     window.onload = function() {
+      // PROTEKSI: Cek status login saat halaman dibuka
+      if (sessionStorage.getItem("isLoggedIn") !== "true") {
+        alert("Silakan login terlebih dahulu!");
+        window.location.href = "index.html"; 
+        return;
+      }
+
       loadData();
     };
 
     window.logout = function() {
-      window.location.href = "index.html";
+      if (confirm("Apakah Anda yakin ingin logout?")) {
+        sessionStorage.removeItem("isLoggedIn");
+        window.location.href = "index.html";
+      }
     };
 
     function loadData() {
-      // Mengambil data secara real-time tanpa filter query ketat agar mencegah error
       onSnapshot(collection(db, "absensi"), (snapshot) => {
         rawData = [];
         snapshot.forEach((docSnap) => {
           rawData.push({ id: docSnap.id, ...docSnap.data() });
         });
         
-        // Urutkan manual berdasarkan tanggal/waktu
         rawData.sort((a, b) => {
           let tA = a.created_at ? (a.created_at.seconds || 0) : 0;
           let tB = b.created_at ? (b.created_at.seconds || 0) : 0;
