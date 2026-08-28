@@ -1,1 +1,277 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absensi Karyawan</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f1f5f9;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
 
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 450px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-top: 0;
+      color: #1e293b;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #475569;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .camera-box {
+      width: 100%;
+      height: 240px;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    video, canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #photoPreview {
+      display: none;
+    }
+
+    .btn-camera {
+      background: #475569;
+      color: white;
+      border: none;
+      margin-bottom: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      background: #2563eb;
+      color: white;
+      border: none;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn-submit:hover { background: #1d4ed8; }
+    .btn-camera:hover { background: #334155; }
+
+    .info-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>📍 Absensi Karyawan</h2>
+
+    <div class="info-box" id="infoLokasi">
+      📡 Mendapatkan lokasi GPS...
+    </div>
+
+    <form id="formAbsen">
+      <div class="form-group">
+        <label>Nama Karyawan</label>
+        <input type="text" id="nama" placeholder="Masukkan nama lengkap" required>
+      </div>
+
+      <div class="form-group">
+        <label>Foto Selfie</label>
+        <div class="camera-box">
+          <video id="webcam" autoplay playsinline></video>
+          <img id="photoPreview" alt="Hasil Foto">
+        </div>
+        <button type="button" class="btn-camera" id="btnAmbilFoto" onclick="takeSnapshot()">📸 Ambil Foto Selfie</button>
+      </div>
+
+      <button type="submit" class="btn-submit" id="btnKirim">KIRIM ABSENSI</button>
+    </form>
+  </div>
+
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Konfigurasi Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
+      authDomain: "absensi-lampung.firebaseapp.com",
+      projectId: "absensi-lampung",
+      storageBucket: "absensi-lampung.firebasestorage.app",
+      messagingSenderId: "771796491077",
+      appId: "1:771796491077:web:cbb577ab33755f11ad7c2c",
+      measurementId: "G-FPVFE0E7HF"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // KOORDINAT KANTOR (Ubah sesuai koordinat lokasi kantor kamu)
+    const KANTOR_LAT = -6.200000; 
+    const KANTOR_LNG = 106.816666; 
+    const MAX_JARAK_METER = 200; // Jarak maksimal izin absen (meter)
+
+    let userLat = null;
+    let userLng = null;
+    let fotoDataUrl = "";
+
+    const video = document.getElementById("webcam");
+    const canvas = document.getElementById("canvas");
+    const photoPreview = document.getElementById("photoPreview");
+    const btnAmbilFoto = document.getElementById("btnAmbilFoto");
+
+    // Start Kamera Web/HP
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => { alert("Gagal mengakses kamera: " + err.message); });
+
+    // Dapatkan Lokasi GPS
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
+        let jarak = hitungJarak(userLat, userLng, KANTOR_LAT, KANTOR_LNG);
+        document.getElementById("infoLokasi").innerHTML = `📍 Jarak Anda ke Kantor: <b>${Math.round(jarak)} meter</b>`;
+      }, err => {
+        document.getElementById("infoLokasi").innerText = "⚠️ Gagal mengambil lokasi. Aktifkan GPS HP Anda.";
+      }, { enableHighAccuracy: true });
+    }
+
+    // Ambil Foto
+    window.takeSnapshot = function() {
+      if (fotoDataUrl === "") {
+        canvas.width = 300;
+        canvas.height = 300;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Kompres ukuran gambar agar ringan saat dikirim ke database
+        fotoDataUrl = canvas.toDataURL("image/jpeg", 0.5);
+
+        photoPreview.src = fotoDataUrl;
+        photoPreview.style.display = "block";
+        video.style.display = "none";
+        btnAmbilFoto.innerText = "🔄 Foto Ulang";
+      } else {
+        fotoDataUrl = "";
+        photoPreview.style.display = "none";
+        video.style.display = "block";
+        btnAmbilFoto.innerText = "📸 Ambil Foto Selfie";
+      }
+    };
+
+    // Hitung Jarak (Haversine Formula)
+    function hitungJarak(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; 
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c; 
+    }
+
+    // Submit Absensi
+    document.getElementById("formAbsen").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      let nama = document.getElementById("nama").value.trim();
+
+      if (!fotoDataUrl) {
+        return alert("Harap ambil foto selfie terlebih dahulu!");
+      }
+      if (!userLat || !userLng) {
+        return alert("Lokasi GPS belum terdeteksi. Pastikan GPS aktif dan beri izin browser.");
+      }
+
+      let jarakM = hitungJarak(userLat, userLng, KANTOR_LAT, KANTOR_LNG);
+      let statusAbsen = (jarakM <= MAX_JARAK_METER) ? "Hadir" : "Ditolak (Luar Area)";
+      
+      let now = new Date();
+      let tgl = now.toISOString().split('T')[0];
+      let jam = now.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' });
+
+      const btnKirim = document.getElementById("btnKirim");
+      btnKirim.disabled = true;
+      btnKirim.innerText = "Mengirim...";
+
+      try {
+        await addDoc(collection(db, "absensi"), {
+          nama: nama,
+          tanggal: tgl,
+          jam: jam,
+          foto: fotoDataUrl,
+          lat: userLat,
+          lng: userLng,
+          jarak: `${Math.round(jarakM)} Meter`,
+          status: statusAbsen,
+          created_at: serverTimestamp()
+        });
+
+        alert(`Absensi Berhasil dikirim! Status: ${statusAbsen}`);
+        location.reload();
+      } catch (err) {
+        alert("Gagal menyimpan absensi: " + err.message);
+        btnKirim.disabled = false;
+        btnKirim.innerText = "KIRIM ABSENSI";
+      }
+    });
+  </script>
+</body>
+</html>
