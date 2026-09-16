@@ -164,20 +164,10 @@
     </div>
   </div>
 
-  <script>
-    // Global Logout Function
-    function logoutAdmin() {
-      if (confirm("Apakah Anda yakin ingin keluar?")) {
-        sessionStorage.clear();
-        localStorage.clear();
-        window.location.href = "login.html";
-      }
-    }
-  </script>
-
   <!-- FIREBASE & CORE LOGIC SCRIPT -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -191,7 +181,32 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
+
+    // 1. PROTEKSI HALAMAN: Cek apakah user sedang login
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // Jika belum login / sudah logout, langsung lempar ke login.html
+        window.location.href = "login.html";
+      } else {
+        // Jika terkonfirmasi login, baru load data
+        loadRealtimeData();
+      }
+    });
+
+    // 2. FUNGSI LOGOUT RESMI FIREBASE
+    window.logoutAdmin = function() {
+      if (confirm("Apakah Anda yakin ingin keluar?")) {
+        signOut(auth).then(() => {
+          sessionStorage.clear();
+          localStorage.clear();
+          window.location.href = "login.html";
+        }).catch((error) => {
+          alert("Gagal keluar: " + error.message);
+        });
+      }
+    };
 
     // Tab Switcher Function
     window.switchTab = function(tabName) {
@@ -304,11 +319,6 @@
         console.error("Firestore error: ", error);
       });
     }
-
-    // Init Page
-    window.onload = function() {
-      loadRealtimeData();
-    };
   </script>
 </body>
 </html>
