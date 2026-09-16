@@ -3,112 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Admin - Absensi</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(135deg, #0f172a, #1e293b);
-      color: white;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .login-box {
-      background: #1e293b;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      width: 100%;
-      max-width: 360px;
-      text-align: center;
-      border: 1px solid #334155;
-    }
-
-    .login-box h2 {
-      margin-top: 0;
-      margin-bottom: 20px;
-      color: #f8fafc;
-    }
-
-    .input-group {
-      margin-bottom: 15px;
-      text-align: left;
-    }
-
-    .input-group label {
-      display: block;
-      font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 5px;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 6px;
-      border: 1px solid #334155;
-      background: #0f172a;
-      color: white;
-      outline: none;
-    }
-
-    .input-group input:focus {
-      border-color: #3b82f6;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-  </style>
+  <title>Aplikasi Absensi Panel Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-slate-100 font-sans text-slate-800">
 
-  <div class="login-box">
-    <h2>🔐 LOGIN ADMIN</h2>
-    <form id="loginForm" onsubmit="login(event)">
-      <div class="input-group">
-        <label>Username</label>
-        <input type="text" id="username" placeholder="Masukkan Username" required>
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shrink-0">
+      <div class="p-5 flex items-center gap-3 border-b border-slate-800">
+        <div class="bg-blue-600 text-white font-bold p-2 rounded-lg text-xl flex items-center justify-center w-10 h-10">A</div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">ABSENSI</h1>
+          <p class="text-xs text-slate-400">PANEL ADMIN</p>
+        </div>
       </div>
-      <div class="input-group">
-        <label>Password</label>
-        <input type="password" id="password" placeholder="Masukkan Password" required>
-      </div>
-      <button type="submit">LOGIN</button>
-    </form>
-  </div>
-
-  <script>
-    function login(event) {
-      event.preventDefault(); // Mencegah reload halaman saat submit
       
-      let user = document.getElementById("username").value.trim();
-      let pass = document.getElementById("password").value.trim();
+      <nav class="flex-1 p-4 space-y-2">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-sm">
+          <i class="fa-solid fa-border-all w-5"></i> Dashboard
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg font-medium text-sm transition">
+          <i class="fa-solid fa-user-group w-5"></i> Karyawan
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg font-medium text-sm transition">
+          <i class="fa-solid fa-location-dot w-5"></i> Lokasi Kantor
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg font-medium text-sm transition">
+          <i class="fa-solid fa-gear w-5"></i> Pengaturan
+        </a>
+      </nav>
+    </aside>
 
-      if (user === "admin" && pass === "1234") {
-        sessionStorage.setItem("isLoggedIn", "true"); // Simpan status sesi login
-        window.location.href = "admin.html"; // Masuk ke halaman admin
-      } else {
-        alert("Username atau Password salah!");
-      }
-    }
-  </script>
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-y-auto">
+      <!-- Top Header -->
+      <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-border-all text-xl"></i> Dashboard
+          </h2>
+          <p class="text-xs text-slate-500 mt-1" id="current-date">Kamis, 10 September 2026</p>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+          <span class="flex items-center gap-2 text-emerald-600 font-medium">
+            <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span> Terhubung ke Firebase
+          </span>
+          <button class="text-slate-500 hover:text-rose-600 font-medium transition">Keluar</button>
+        </div>
+      </header>
+
+      <!-- Dashboard Content -->
+      <div class="p-8 space-y-8">
+        <!-- Stat Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Hari Ini</p>
+            <p class="text-3xl font-extrabold text-slate-800 mt-2">3</p>
+          </div>
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Hadir</p>
+            <p class="text-3xl font-extrabold text-slate-800 mt-2">3</p>
+          </div>
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Izin / Sakit / Cuti</p>
+            <p class="text-3xl font-extrabold text-slate-800 mt-2">0</p>
+          </div>
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Data Bulan Ini</p>
+            <p class="text-3xl font-extrabold text-slate-800 mt-2">4</p>
+          </div>
+        </div>
+
+        <!-- Rekap Table Section -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h3 class="text-lg font-bold text-slate-800">Rekap absensi</h3>
+            <button class="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+              <i class="fa-solid fa-download"></i> Ekspor CSV
+            </button>
+          </div>
+
+          <!-- Filters -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Bulan</label>
+              <input type="month" value="2026-09" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Cari</label>
+              <input type="text" placeholder="Nama atau status" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex items-end">
+              <button class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition w-full sm:w-auto">Muat ulang</button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase">
+                  <th class="py-3 px-4">Foto</th>
+                  <th class="py-3 px-4">Nama</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4">Tipe</th>
+                  <th class="py-3 px-4">Waktu</th>
+                  <th class="py-3 px-4">Lokasi</th>
+                  <th class="py-3 px-4">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="text-sm divide-y divide-slate-100">
+                <tr class="hover:bg-slate-50">
+                  <td class="py-3 px-4">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100" class="w-10 h-10 rounded-lg object-cover" alt="Foto">
+                  </td>
+                  <td class="py-3 px-4 font-semibold text-slate-800">Ahmad Badru</td>
+                  <td class="py-3 px-4"><span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs font-semibold">Hadir</span></td>
+                  <td class="py-3 px-4 text-slate-600">Masuk</td>
+                  <td class="py-3 px-4 text-slate-600">4 Sep 2026, 10.54</td>
+                  <td class="py-3 px-4"><a href="#" class="text-blue-600 hover:underline font-medium">Lihat peta</a></td>
+                  <td class="py-3 px-4 space-x-2">
+                    <button class="text-blue-600 hover:underline font-medium">Edit</button>
+                    <button class="text-rose-600 hover:underline font-medium">Hapus</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="py-3 px-4">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100" class="w-10 h-10 rounded-lg object-cover" alt="Foto">
+                  </td>
+                  <td class="py-3 px-4 font-semibold text-slate-800">Ahmad Badru</td>
+                  <td class="py-3 px-4"><span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs font-semibold">Hadir</span></td>
+                  <td class="py-3 px-4 text-slate-600">Masuk</td>
+                  <td class="py-3 px-4 text-slate-600">10 Sep 2026, 09.49</td>
+                  <td class="py-3 px-4"><a href="#" class="text-blue-600 hover:underline font-medium">Lihat peta</a></td>
+                  <td class="py-3 px-4 space-x-2">
+                    <button class="text-blue-600 hover:underline font-medium">Edit</button>
+                    <button class="text-rose-600 hover:underline font-medium">Hapus</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 
 </body>
 </html>
