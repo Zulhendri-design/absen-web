@@ -44,10 +44,10 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Cek jika sudah login, langsung lempar ke admin.html
+    // Cek jika akun sudah login, langsung lempar ke index.html
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        window.location.href = "admin.html";
+        window.location.href = "index.html";
       }
     });
 
@@ -70,7 +70,7 @@
         .then((userCredential) => {
           statusDiv.style.color = "#28a745";
           statusDiv.innerText = "Login berhasil! Mengalihkan...";
-          window.location.href = "admin.html";
+          window.location.href = "index.html";
         })
         .catch((error) => {
           btnLogin.disabled = false;
