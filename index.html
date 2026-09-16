@@ -42,7 +42,7 @@
       <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shrink-0">
         <div>
           <h2 id="header-title" class="text-xl font-bold text-slate-800">Dashboard</h2>
-          <p class="text-xs text-slate-500" id="current-date">Kamis, 10 September 2026</p>
+          <p class="text-xs text-slate-500" id="current-date">Rabu, 16 September 2026</p>
         </div>
         <div class="flex items-center gap-4">
           <span class="inline-flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full font-medium">
@@ -71,7 +71,7 @@
               <h3 class="text-3xl font-bold text-slate-800 mt-2" id="stat-izin">0</h3>
             </div>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL DATA BULAN INI</p>
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL REKAP DATA</p>
               <h3 class="text-3xl font-bold text-slate-800 mt-2" id="stat-bulan">0</h3>
             </div>
           </div>
@@ -133,15 +133,15 @@
             <form id="form-lokasi" class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Latitude</label>
-                <input type="text" id="lokasi-lat" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="-6.2197347">
+                <input type="text" id="lokasi-lat" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="-6.220">
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Longitude</label>
-                <input type="text" id="lokasi-lng" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="106.812345">
+                <input type="text" id="lokasi-lng" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="106.721">
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Radius Maksimal (Meter)</label>
-                <input type="number" id="lokasi-radius" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="100">
+                <input type="number" id="lokasi-radius" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="200">
               </div>
               <button type="button" onclick="alert('Lokasi kantor berhasil disimpan!')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-medium transition w-full">
                 Simpan Pengaturan Lokasi
@@ -168,12 +168,12 @@
     import { getFirestore, collection, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyDJm3Xrf4IRqF5X_sD25RJ07A6SVUGQTpk",
+      apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
       authDomain: "absensi-lampung.firebaseapp.com",
       projectId: "absensi-lampung",
       storageBucket: "absensi-lampung.firebasestorage.app",
       messagingSenderId: "771796491077",
-      appId: "1:771796491077:web:cbb577ab33755f1lad7c2c",
+      appId: "1:771796491077:web:cbb577ab33755f11ad7c2c",
       measurementId: "G-FPVFE0E7HF"
     };
 
@@ -235,35 +235,55 @@
           tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">Belum ada data absensi.</td></tr>`;
           document.getElementById("stat-total").innerText = "0";
           document.getElementById("stat-hadir").innerText = "0";
+          document.getElementById("stat-izin").innerText = "0";
           document.getElementById("stat-bulan").innerText = "0";
           return;
         }
 
         let total = snapshot.size;
         let hadirCount = 0;
+        let izinCount = 0;
 
         snapshot.forEach((docSnap) => {
           const item = docSnap.data();
           const id = docSnap.id;
 
-          if (item.status === "Hadir") hadirCount++;
+          const status = item.status || "Hadir";
+          if (status === "Hadir") {
+            hadirCount++;
+          } else if (["Izin", "Sakit", "Cuti"].includes(status)) {
+            izinCount++;
+          }
+
+          // Otomatis gabungkan tanggal & jam jika field 'waktu' tidak ada
+          let displayWaktu = item.waktu;
+          if (!displayWaktu) {
+            if (item.tanggal || item.jam) {
+              displayWaktu = `${item.tanggal || ''} ${item.jam || ''}`.trim();
+            } else if (item.created_at) {
+              const d = item.created_at.toDate ? item.created_at.toDate() : new Date(item.created_at);
+              displayWaktu = d.toLocaleString('id-ID');
+            } else {
+              displayWaktu = "-";
+            }
+          }
 
           const tr = document.createElement("tr");
           tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
           tr.innerHTML = `
             <td class="p-4">
-              <img src="${item.foto || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full object-cover">
+              <img src="${item.foto || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
             </td>
             <td class="p-4 font-semibold text-slate-800">${item.nama || '-'}</td>
             <td class="p-4">
-              <span class="px-3 py-1 rounded-full text-xs font-medium ${item.status === 'Hadir' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
-                ${item.status || 'Hadir'}
+              <span class="px-3 py-1 rounded-full text-xs font-medium ${status === 'Hadir' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                ${status}
               </span>
             </td>
             <td class="p-4 text-slate-600">${item.tipe || 'Masuk'}</td>
-            <td class="p-4 text-slate-600">${waktuTampil}</td>
+            <td class="p-4 text-slate-600">${displayWaktu}</td>
             <td class="p-4">
-              ${item.lat && item.lng ? `<a href="https://maps.google.com/?q=${item.lat},${item.lng}" target="_blank" class="text-blue-600 hover:underline"><i class="fas fa-map-marker-alt"></i> Lihat Peta</a>` : '-'}
+              ${item.lat && item.lng ? `<a href="https://maps.google.com/?q=${item.lat},${item.lng}" target="_blank" class="text-blue-600 hover:underline inline-flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> Lihat Peta</a>` : '-'}
             </td>
             <td class="p-4">
               <button onclick="hapusAbsen('${id}')" class="text-red-500 hover:text-red-700 text-xs font-semibold">Hapus</button>
@@ -274,6 +294,7 @@
 
         document.getElementById("stat-total").innerText = total;
         document.getElementById("stat-hadir").innerText = hadirCount;
+        document.getElementById("stat-izin").innerText = izinCount;
         document.getElementById("stat-bulan").innerText = total;
       }, (error) => {
         console.error("Firestore error: ", error);
