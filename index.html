@@ -48,7 +48,9 @@
           <span class="inline-flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full font-medium">
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Terhubung ke Firebase
           </span>
-          <button onclick="logout()" class="text-slate-500 hover:text-red-600 text-sm font-medium transition">Keluar</button>
+          <button onclick="logoutAdmin()" class="text-slate-500 hover:text-red-600 text-sm font-medium transition cursor-pointer">
+            <i class="fas fa-sign-out-alt"></i> Keluar
+          </button>
         </div>
       </header>
 
@@ -162,6 +164,17 @@
     </div>
   </div>
 
+  <script>
+    // Global Logout Function
+    function logoutAdmin() {
+      if (confirm("Apakah Anda yakin ingin keluar?")) {
+        sessionStorage.clear();
+        localStorage.clear();
+        window.location.href = "login.html";
+      }
+    }
+  </script>
+
   <!-- FIREBASE & CORE LOGIC SCRIPT -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -201,14 +214,6 @@
         pengaturan: "Pengaturan Sistem"
       };
       document.getElementById("header-title").innerText = titles[tabName] || "Dashboard";
-    };
-
-    // Logout Function
-    window.logout = function() {
-      if (confirm("Apakah Anda yakin ingin keluar?")) {
-        sessionStorage.removeItem("isLoggedIn");
-        window.location.reload();
-      }
     };
 
     // Delete Record Function
@@ -255,7 +260,6 @@
             izinCount++;
           }
 
-          // Otomatis gabungkan tanggal & jam jika field 'waktu' tidak ada
           let displayWaktu = item.waktu;
           if (!displayWaktu) {
             if (item.tanggal || item.jam) {
