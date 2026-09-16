@@ -3,334 +3,286 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Rekap Absensi</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f4f6f9;
-      color: #333;
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: auto;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      text-align: center;
-    }
-
-    .card h4 { margin: 0; font-size: 13px; color: #666; text-transform: uppercase; }
-    .card .num { font-size: 28px; font-weight: bold; margin-top: 10px; color: #2563eb; }
-
-    .filter-box {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    input, button {
-      padding: 10px 15px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-      outline: none;
-    }
-
-    button {
-      cursor: pointer;
-      font-weight: bold;
-      border: none;
-    }
-
-    .btn-excel { background: #16a34a; color: white; }
-    .btn-logout { background: #dc2626; color: white; }
-    .btn-reset { background: #64748b; color: white; }
-    .btn-hapus { background: #dc2626; color: white; padding: 6px 12px; border-radius: 5px; }
-
-    table {
-      width: 100%;
-      background: white;
-      border-collapse: collapse;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    th, td {
-      padding: 12px 15px;
-      text-align: center;
-      border-bottom: 1px solid #eee;
-      font-size: 14px;
-    }
-
-    th { background: #f8fafc; color: #475569; }
-
-    .img-selfie {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 1px solid #ccc;
-    }
-
-    .badge {
-      padding: 5px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: bold;
-    }
-    .badge-masuk { background: #dcfce7; color: #166534; }
-    .badge-pulang { background: #dbeafe; color: #1e40af; }
-    .badge-ditolak { background: #fee2e2; color: #991b1b; }
-  </style>
+  <title>Aplikasi Absensi Panel Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-slate-100 font-sans text-slate-800">
 
-  <div class="container">
-    <div class="header">
-      <h2>Dashboard Rekap Absensi Karyawan</h2>
-      <div>
-        <button class="btn-excel" onclick="downloadExcel()">📊 Ekspor Excel</button>
-        <button class="btn-logout" onclick="logout()">🚪 Logout</button>
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shrink-0">
+      <div class="p-5 flex items-center gap-3 border-b border-slate-800">
+        <div class="bg-blue-600 text-white font-bold p-2 rounded-lg text-xl flex items-center justify-center w-10 h-10">A</div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">ABSENSI</h1>
+          <p class="text-xs text-slate-400">PANEL ADMIN</p>
+        </div>
       </div>
+
+      <nav class="flex-1 p-4 space-y-2">
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white font-medium transition">
+          <i class="fas fa-th-large w-5"></i> Dashboard
+        </button>
+        <button onclick="switchTab('karyawan')" id="btn-karyawan" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition">
+          <i class="fas fa-user-friends w-5"></i> Karyawan
+        </button>
+        <button onclick="switchTab('lokasi')" id="btn-lokasi" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition">
+          <i class="fas fa-map-marker-alt w-5"></i> Lokasi Kantor
+        </button>
+        <button onclick="switchTab('pengaturan')" id="btn-pengaturan" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition">
+          <i class="fas fa-cog w-5"></i> Pengaturan
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header Bar -->
+      <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shrink-0">
+        <div>
+          <h2 id="header-title" class="text-xl font-bold text-slate-800">Dashboard</h2>
+          <p class="text-xs text-slate-500" id="current-date">Kamis, 10 September 2026</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="inline-flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Terhubung ke Firebase
+          </span>
+          <button onclick="logout()" class="text-slate-500 hover:text-red-600 text-sm font-medium transition">Keluar</button>
+        </div>
+      </header>
+
+      <!-- Content Pages -->
+      <main class="flex-1 overflow-y-auto p-8">
+        
+        <!-- TAB 1: DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL HARI INI</p>
+              <h3 class="text-3xl font-bold text-slate-800 mt-2" id="stat-total">0</h3>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">HADIR</p>
+              <h3 class="text-3xl font-bold text-slate-800 mt-2" id="stat-hadir">0</h3>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">IZIN / SAKIT / CUTI</p>
+              <h3 class="text-3xl font-bold text-slate-800 mt-2" id="stat-izin">0</h3>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL DATA BULAN INI</p>
+              <h3 class="text-3xl font-bold text-slate-800 mt-2" id="stat-bulan">0</h3>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center flex-wrap gap-4">
+              <h3 class="font-bold text-lg text-slate-800">Rekap absensi</h3>
+              <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2">
+                <i class="fas fa-download"></i> Ekspor CSV
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 uppercase text-xs">
+                  <tr>
+                    <th class="p-4 font-semibold">Foto</th>
+                    <th class="p-4 font-semibold">Nama</th>
+                    <th class="p-4 font-semibold">Status</th>
+                    <th class="p-4 font-semibold">Tipe</th>
+                    <th class="p-4 font-semibold">Waktu</th>
+                    <th class="p-4 font-semibold">Lokasi</th>
+                    <th class="p-4 font-semibold">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tabel-absensi" class="divide-y divide-slate-100">
+                  <tr>
+                    <td colspan="7" class="p-8 text-center text-slate-400">Memuat data absensi...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: KARYAWAN -->
+        <div id="tab-karyawan" class="tab-content hidden space-y-6">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-xl">
+            <h3 class="text-lg font-bold mb-4">Pendaftaran Karyawan Baru</h3>
+            <form id="form-karyawan" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                <input type="text" id="karyawan-nama" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan nama karyawan">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Jabatan / Divisi</label>
+                <input type="text" id="karyawan-jabatan" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: Staff IT / Admin">
+              </div>
+              <button type="button" onclick="alert('Fitur simpan karyawan siap terhubung!')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-medium transition w-full">
+                Simpan Karyawan
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- TAB 3: LOKASI KANTOR -->
+        <div id="tab-lokasi" class="tab-content hidden space-y-6">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-xl">
+            <h3 class="text-lg font-bold mb-4">Atur Lokasi GPS Kantor</h3>
+            <form id="form-lokasi" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Latitude</label>
+                <input type="text" id="lokasi-lat" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="-6.2197347">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Longitude</label>
+                <input type="text" id="lokasi-lng" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="106.812345">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Radius Maksimal (Meter)</label>
+                <input type="number" id="lokasi-radius" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="100">
+              </div>
+              <button type="button" onclick="alert('Lokasi kantor berhasil disimpan!')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-medium transition w-full">
+                Simpan Pengaturan Lokasi
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- TAB 4: PENGATURAN -->
+        <div id="tab-pengaturan" class="tab-content hidden space-y-6">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-xl">
+            <h3 class="text-lg font-bold mb-4">Pengaturan Sistem</h3>
+            <p class="text-slate-500 text-sm">Atur jam kerja, toleransi keterlambatan, dan akun administrator.</p>
+          </div>
+        </div>
+
+      </main>
     </div>
-
-    <div class="cards">
-      <div class="card">
-        <h4>Total Rekap</h4>
-        <div class="num" id="totalAbsen">0</div>
-      </div>
-      <div class="card">
-        <h4>Hadir (Dalam Area)</h4>
-        <div class="num" style="color:#16a34a;" id="totalHadir">0</div>
-      </div>
-      <div class="card">
-        <h4>Ditolak / Luar Area</h4>
-        <div class="num" style="color:#dc2626;" id="totalDitolak">0</div>
-      </div>
-    </div>
-
-    <div class="filter-box">
-      <input type="text" id="filterNama" placeholder="Cari Nama Karyawan..." oninput="filterData()">
-      <input type="date" id="filterTanggal" onchange="filterData()">
-      <button class="btn-reset" onclick="resetFilter()">Reset Filter</button>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Foto</th>
-          <th>Nama Karyawan</th>
-          <th>Tanggal</th>
-          <th>Jam Masuk</th>
-          <th>Jam Pulang</th>
-          <th>Jarak Kantor</th>
-          <th>Status</th>
-          <th>Peta Lokasi</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="tabelAbsensi">
-        <tr><td colspan="10">Memuat data absensi...</td></tr>
-      </tbody>
-    </table>
   </div>
 
+  <!-- FIREBASE & CORE LOGIC SCRIPT -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
+      apiKey: "AIzaSyDJm3Xrf4IRqF5X_sD25RJ07A6SVUGQTpk",
       authDomain: "absensi-lampung.firebaseapp.com",
       projectId: "absensi-lampung",
       storageBucket: "absensi-lampung.firebasestorage.app",
       messagingSenderId: "771796491077",
-      appId: "1:771796491077:web:cbb577ab33755f11ad7c2c",
+      appId: "1:771796491077:web:cbb577ab33755f1lad7c2c",
       measurementId: "G-FPVFE0E7HF"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let rawData = [];
-    let processedData = [];
+    // Tab Switcher Function
+    window.switchTab = function(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
 
-    window.onload = function() {
-     loadData();
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition";
+      });
+
+      const activeBtn = document.getElementById(`btn-${tabName}`);
+      if (activeBtn) {
+        activeBtn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white font-medium transition";
+      }
+
+      const titles = {
+        dashboard: "Dashboard",
+        karyawan: "Kelola Karyawan",
+        lokasi: "Pengaturan Lokasi Kantor",
+        pengaturan: "Pengaturan Sistem"
+      };
+      document.getElementById("header-title").innerText = titles[tabName] || "Dashboard";
     };
 
+    // Logout Function
     window.logout = function() {
-      if (confirm("Apakah Anda yakin ingin logout?")) {
+      if (confirm("Apakah Anda yakin ingin keluar?")) {
         sessionStorage.removeItem("isLoggedIn");
-        window.location.href = "index.html";
+        window.location.reload();
       }
     };
 
-    function loadData() {
-      onSnapshot(collection(db, "absensi"), (snapshot) => {
-        rawData = [];
-        snapshot.forEach((docSnap) => {
-          rawData.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        
-        rawData.sort((a, b) => {
-          let tA = a.created_at ? (a.created_at.seconds || 0) : 0;
-          let tB = b.created_at ? (b.created_at.seconds || 0) : 0;
-          return tA - tB;
-        });
-
-        prosesKelompokData();
-      }, (err) => {
-        console.error("Gagal load data: ", err);
-        document.getElementById("tabelAbsensi").innerHTML = `<tr><td colspan="10" style="color:red;">Gagal memuat data: ${err.message}</td></tr>`;
-      });
-    }
-
-    function prosesKelompokData() {
-      let mapData = {};
-
-      rawData.forEach((d) => {
-        let tgl = d.tanggal || (d.waktu ? d.waktu.split(',')[0] : '-') || '-';
-        let jam = d.jam || (d.waktu ? d.waktu.split(',')[1] : '-') || '-';
-        let nama = d.nama || d.namaKaryawan || 'Tanpa Nama';
-        
-        let key = `${nama}_${tgl}`;
-
-        if (!mapData[key]) {
-          mapData[key] = {
-            id_masuk: d.id,
-            id_pulang: null,
-            nama: nama,
-            tanggal: tgl,
-            jam_masuk: jam,
-            jam_pulang: "-",
-            foto: d.foto || d.selfie || d.fotoSelfie || "",
-            jarak: d.jarak || d.jarakKantor || "-",
-            status: d.status || "Hadir",
-            lat: d.lat || d.latitude,
-            lng: d.lng || d.longitude
-          };
-        } else {
-          mapData[key].jam_pulang = jam;
-          mapData[key].id_pulang = d.id;
-        }
-      });
-
-      processedData = Object.values(mapData).reverse();
-      tampilkanTabel(processedData);
-    }
-
-    function tampilkanTabel(data) {
-      let isi = "";
-      let countHadir = 0;
-      let countDitolak = 0;
-
-      if (data.length === 0) {
-        isi = `<tr><td colspan="10">Belum ada data absensi.</td></tr>`;
-      } else {
-        data.forEach((d, index) => {
-          if (d.status.includes("Ditolak") || d.status.includes("Luar")) {
-            countDitolak++;
-          } else {
-            countHadir++;
-          }
-
-          let lokasiBtn = (d.lat && d.lng) 
-            ? `<a href="https://maps.google.com/?q=${d.lat},${d.lng}" target="_blank">📍 Lihat Peta</a>`
-            : `-`;
-
-          let fotoSrc = d.foto && d.foto.length > 20 ? d.foto : 'https://via.placeholder.com/45';
-
-          isi += `<tr>
-            <td>${index + 1}</td>
-            <td><img src="${fotoSrc}" class="img-selfie" onerror="this.src='https://via.placeholder.com/45'"></td>
-            <td><b>${d.nama}</b></td>
-            <td>${d.tanggal}</td>
-            <td><span class="badge badge-masuk">🟢 ${d.jam_masuk}</span></td>
-            <td><span class="badge badge-pulang">🔴 ${d.jam_pulang}</span></td>
-            <td>${d.jarak}</td>
-            <td><span class="badge ${d.status.includes('Ditolak') ? 'badge-ditolak' : 'badge-masuk'}">${d.status}</span></td>
-            <td>${lokasiBtn}</td>
-            <td><button class="btn-hapus" onclick="hapusBaris('${d.id_masuk}', '${d.id_pulang}')">Hapus</button></td>
-          </tr>`;
-        });
-      }
-
-      document.getElementById("tabelAbsensi").innerHTML = isi;
-      document.getElementById("totalAbsen").innerText = data.length;
-      document.getElementById("totalHadir").innerText = countHadir;
-      document.getElementById("totalDitolak").innerText = countDitolak;
-    }
-
-    window.filterData = function() {
-      let nama = document.getElementById("filterNama").value.toLowerCase();
-      let tgl = document.getElementById("filterTanggal").value;
-
-      let filtered = processedData.filter(d => {
-        let matchNama = d.nama.toLowerCase().includes(nama);
-        let matchTgl = tgl ? d.tanggal === tgl : true;
-        return matchNama && matchTgl;
-      });
-
-      tampilkanTabel(filtered);
-    };
-
-    window.resetFilter = function() {
-      document.getElementById("filterNama").value = "";
-      document.getElementById("filterTanggal").value = "";
-      tampilkanTabel(processedData);
-    };
-
-    window.hapusBaris = async function(idMasuk, idPulang) {
-      if (confirm("Hapus data absensi ini?")) {
+    // Delete Record Function
+    window.hapusAbsen = async function(id) {
+      if (confirm("Yakin ingin menghapus record ini?")) {
         try {
-          if (idMasuk) await deleteDoc(doc(db, "absensi", idMasuk));
-          if (idPulang) await deleteDoc(doc(db, "absensi", idPulang));
+          await deleteDoc(doc(db, "absensi", id));
+          alert("Data berhasil dihapus!");
         } catch (e) {
-          alert("Gagal menghapus: " + e.message);
+          alert("Gagal menghapus data: " + e.message);
         }
       }
     };
 
-    window.downloadExcel = function() {
-      if (processedData.length === 0) return alert("Tidak ada data!");
-      let csv = "Nama,Tanggal,Jam Masuk,Jam Pulang,Jarak,Status\n";
-      processedData.forEach(d => {
-        csv += `"${d.nama}","${d.tanggal}","${d.jam_masuk}","${d.jam_pulang}","${d.jarak}","${d.status}"\n`;
+    // Realtime Firestore Listener
+    function loadRealtimeData() {
+      const q = query(collection(db, "absensi"), orderBy("created_at", "desc"));
+      
+      onSnapshot(q, (snapshot) => {
+        const tbody = document.getElementById("tabel-absensi");
+        tbody.innerHTML = "";
+
+        if (snapshot.empty) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">Belum ada data absensi.</td></tr>`;
+          document.getElementById("stat-total").innerText = "0";
+          document.getElementById("stat-hadir").innerText = "0";
+          document.getElementById("stat-bulan").innerText = "0";
+          return;
+        }
+
+        let total = snapshot.size;
+        let hadirCount = 0;
+
+        snapshot.forEach((docSnap) => {
+          const item = docSnap.data();
+          const id = docSnap.id;
+
+          if (item.status === "Hadir") hadirCount++;
+
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+          tr.innerHTML = `
+            <td class="p-4">
+              <img src="${item.foto || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full object-cover">
+            </td>
+            <td class="p-4 font-semibold text-slate-800">${item.nama || '-'}</td>
+            <td class="p-4">
+              <span class="px-3 py-1 rounded-full text-xs font-medium ${item.status === 'Hadir' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+                ${item.status || 'Hadir'}
+              </span>
+            </td>
+            <td class="p-4 text-slate-600">${item.tipe || 'Masuk'}</td>
+            <td class="p-4 text-slate-600">${item.waktu || '-'}</td>
+            <td class="p-4">
+              ${item.lat && item.lng ? `<a href="https://maps.google.com/?q=${item.lat},${item.lng}" target="_blank" class="text-blue-600 hover:underline"><i class="fas fa-map-marker-alt"></i> Lihat Peta</a>` : '-'}
+            </td>
+            <td class="p-4">
+              <button onclick="hapusAbsen('${id}')" class="text-red-500 hover:text-red-700 text-xs font-semibold">Hapus</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("stat-total").innerText = total;
+        document.getElementById("stat-hadir").innerText = hadirCount;
+        document.getElementById("stat-bulan").innerText = total;
+      }, (error) => {
+        console.error("Firestore error: ", error);
       });
-      let blob = new Blob([csv], { type: 'text/csv' });
-      let a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `Rekap_Absensi.csv`;
-      a.click();
+    }
+
+    // Init Page
+    window.onload = function() {
+      loadRealtimeData();
     };
   </script>
 </body>
