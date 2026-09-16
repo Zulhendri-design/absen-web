@@ -183,13 +183,10 @@
     let rawData = [];
     let processedData = [];
 
-    window.onload = function() {
-      // PROTEKSI: Cek status login saat halaman dibuka
-      if (sessionStorage.getItem("isLoggedIn") !== "true") {
-        alert("Silakan login terlebih dahulu!");
-        window.location.href = "index.html"; 
-        return;
-      }
+ window.onload = function() {
+    // Panggil langsung fungsi load data tanpa alert
+    loadData();
+};
 
       loadData();
     };
@@ -197,7 +194,7 @@
     window.logout = function() {
       if (confirm("Apakah Anda yakin ingin logout?")) {
         sessionStorage.removeItem("isLoggedIn");
-        window.location.href = "index.html";
+        window.location.href = "login.html";
       }
     };
 
