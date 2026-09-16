@@ -125,6 +125,18 @@
         <input type="text" id="nama" placeholder="Masukkan nama lengkap" required>
       </div>
 
+      <!-- FITUR BARU: PILIHAN TIPE ABSENSI -->
+      <div class="form-group">
+        <label>Tipe Absensi</label>
+        <select id="tipeAbsen" required>
+          <option value="Masuk">Hadir - Masuk</option>
+          <option value="Pulang">Hadir - Pulang</option>
+          <option value="Izin">Izin</option>
+          <option value="Sakit">Sakit</option>
+          <option value="Cuti">Cuti</option>
+        </select>
+      </div>
+
       <div class="form-group">
         <label>Foto Selfie</label>
         <div class="camera-box">
@@ -158,10 +170,10 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // KOORDINAT KANTOR (Ubah sesuai koordinat lokasi kantor kamu)
+    // KOORDINAT KANTOR
     const KANTOR_LAT = -6.220; 
     const KANTOR_LNG = 106.721; 
-    const MAX_JARAK_METER = 200; // Jarak maksimal izin absen (meter)
+    const MAX_JARAK_METER = 200;
 
     let userLat = null;
     let userLng = null;
@@ -197,7 +209,6 @@
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Kompres ukuran gambar agar ringan saat dikirim ke database
         fotoDataUrl = canvas.toDataURL("image/jpeg", 0.5);
 
         photoPreview.src = fotoDataUrl;
@@ -232,6 +243,7 @@
       e.preventDefault();
 
       let nama = document.getElementById("nama").value.trim();
+      let tipe = document.getElementById("tipeAbsen").value;
 
       if (!fotoDataUrl) {
         return alert("Harap ambil foto selfie terlebih dahulu!");
@@ -241,11 +253,24 @@
       }
 
       let jarakM = hitungJarak(userLat, userLng, KANTOR_LAT, KANTOR_LNG);
-      let statusAbsen = (jarakM <= MAX_JARAK_METER) ? "Hadir" : "Ditolak (Luar Area)";
       
+      // Tentukan status berdasarkan tipe dan lokasi
+      let statusAbsen = "Hadir";
+      if (tipe === "Izin" || tipe === "Sakit" || tipe === "Cuti") {
+        statusAbsen = tipe;
+      } else if (jarakM > MAX_JARAK_METER) {
+        statusAbsen = "Ditolak (Luar Area)";
+      }
+
       let now = new Date();
-      let tgl = now.toISOString().split('T')[0];
-      let jam = now.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' });
+      let optionsTanggal = { day: 'numeric', month: 'short', year: 'numeric' };
+      let optionsJam = { hour: '2-digit', minute: '2-digit', hour12: false };
+      
+      let tglFormat = now.toLocaleDateString("id-ID", optionsTanggal);
+      let jamFormat = now.toLocaleTimeString("id-ID", optionsJam).replace('.', ':');
+      
+      // Format lengkap untuk field waktu agar dibaca sempurna oleh Dashboard
+      let waktuLengkap = `${tglFormat}, ${jamFormat}`;
 
       const btnKirim = document.getElementById("btnKirim");
       btnKirim.disabled = true;
@@ -254,13 +279,15 @@
       try {
         await addDoc(collection(db, "absensi"), {
           nama: nama,
-          tanggal: tgl,
-          jam: jam,
+          tipe: tipe,                // Masuk / Pulang / Izin / Sakit / Cuti
+          status: statusAbsen,        // Hadir / Izin / Sakit / Cuti / Ditolak
+          waktu: waktuLengkap,        // Contoh: "16 Sep 2026, 10:45"
+          tanggal: now.toISOString().split('T')[0],
+          jam: jamFormat,
           foto: fotoDataUrl,
           lat: userLat,
           lng: userLng,
           jarak: `${Math.round(jarakM)} Meter`,
-          status: statusAbsen,
           created_at: serverTimestamp()
         });
 
