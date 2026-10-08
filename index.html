@@ -6,10 +6,7 @@
   <title>Absensi Karyawan</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #f1f5f9;
@@ -31,15 +28,8 @@
       max-width: 450px;
     }
 
-    h2 {
-      text-align: center;
-      margin-top: 0;
-      color: #1e293b;
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
+    h2 { text-align: center; margin-top: 0; color: #1e293b; }
+    .form-group { margin-bottom: 15px; }
 
     label {
       display: block;
@@ -49,9 +39,7 @@
       color: #475569;
     }
 
-    input,
-    select,
-    button {
+    input, select, button {
       width: 100%;
       padding: 12px;
       border-radius: 8px;
@@ -60,10 +48,7 @@
       outline: none;
     }
 
-    input:focus,
-    select:focus {
-      border-color: #2563eb;
-    }
+    input:focus, select:focus { border-color: #2563eb; }
 
     .camera-box {
       width: 100%;
@@ -78,16 +63,13 @@
       align-items: center;
     }
 
-    video,
-    canvas {
+    video, canvas {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    #photoPreview {
-      display: none;
-    }
+    #photoPreview { display: none; }
 
     .btn-camera {
       background: #475569;
@@ -107,18 +89,9 @@
       cursor: pointer;
     }
 
-    .btn-submit:hover {
-      background: #1d4ed8;
-    }
-
-    .btn-camera:hover {
-      background: #334155;
-    }
-
-    .btn-submit:disabled {
-      background: #94a3b8;
-      cursor: not-allowed;
-    }
+    .btn-submit:hover { background: #1d4ed8; }
+    .btn-camera:hover { background: #334155; }
+    .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
 
     .info-box {
       background: #f0fdf4;
@@ -136,24 +109,18 @@
 <body>
 
   <div class="card">
-
     <h2>📍 Absensi Karyawan</h2>
 
-    <!-- GPS INFORMASI -->
     <div class="info-box" id="infoLokasi">
       📍 Absensi dapat dilakukan dari mana saja.
     </div>
 
     <form id="formAbsen">
-
-      <!-- NAMA KARYAWAN (DROPDOWN) -->
+      <!-- NAMA KARYAWAN (OTOMATIS DARI FIRESTORE) -->
       <div class="form-group">
         <label>Nama Karyawan</label>
         <select id="nama" required>
-          <option value="">-- Pilih Nama Karyawan --</option>
-          <option value="Zulhendri">Zulhendri</option>
-          <option value="Badru">Badru</option>
-          <option value="Nama Karyawan Baru">Nama Karyawan Baru</option>
+          <option value="">-- Memuat Daftar Karyawan --</option>
         </select>
       </div>
 
@@ -181,21 +148,17 @@
         </button>
       </div>
 
-      <!-- KIRIM -->
       <button type="submit" class="btn-submit" id="btnKirim">
         KIRIM ABSENSI
       </button>
-
     </form>
-
   </div>
 
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script type="module">
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
@@ -218,16 +181,27 @@
     const canvas = document.getElementById("canvas");
     const photoPreview = document.getElementById("photoPreview");
     const btnAmbilFoto = document.getElementById("btnAmbilFoto");
+    const selectNama = document.getElementById("nama");
+
+    // AMBIL DAFTAR KARYAWAN SECARA REALTIME
+    onSnapshot(collection(db, "karyawan"), (snapshot) => {
+      selectNama.innerHTML = '<option value="">-- Pilih Nama Karyawan --</option>';
+      if (snapshot.empty) {
+        selectNama.innerHTML = '<option value="">Belum ada karyawan terdaftar</option>';
+      } else {
+        snapshot.forEach((docSnap) => {
+          let item = docSnap.data();
+          selectNama.innerHTML += `<option value="${item.nama}">${item.nama}</option>`;
+        });
+      }
+    });
 
     // KAMERA
-    navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: false
-    })
-    .then(stream => { video.srcObject = stream; })
-    .catch(err => { alert("Gagal mengakses kamera: " + err.message); });
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => { alert("Gagal mengakses kamera: " + err.message); });
 
-    // GPS OPSIONAL
+    // GPS
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -242,11 +216,9 @@
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
       );
-    } else {
-      document.getElementById("infoLokasi").innerHTML = "🌐 Mode bebas lokasi. GPS tidak diperlukan untuk melakukan absensi.";
     }
 
-    // AMBIL FOTO
+    // FOTO
     window.takeSnapshot = function() {
       if (fotoDataUrl === "") {
         canvas.width = 300;
@@ -266,12 +238,17 @@
       }
     };
 
-    // SUBMIT ABSENSI
+    // SUBMIT
     document.getElementById("formAbsen").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const nama = document.getElementById("nama").value.trim();
+      const nama = selectNama.value;
       const tipe = document.getElementById("tipeAbsen").value;
+
+      if (!nama) {
+        alert("Harap pilih nama karyawan!");
+        return;
+      }
 
       if (!fotoDataUrl) {
         alert("Harap ambil foto selfie terlebih dahulu!");
@@ -295,16 +272,6 @@
       btnKirim.disabled = true;
       btnKirim.innerText = "Mengirim...";
 
-      let lokasiLat = null;
-      let lokasiLng = null;
-      let jarakText = "-";
-
-      if (userLat !== null && userLng !== null) {
-        lokasiLat = userLat;
-        lokasiLng = userLng;
-        jarakText = "GPS tersedia";
-      }
-
       try {
         await addDoc(collection(db, "absensi"), {
           nama: nama,
@@ -314,9 +281,9 @@
           tanggal: now.toISOString().split("T")[0],
           jam: jamFormat,
           foto: fotoDataUrl,
-          lat: lokasiLat,
-          lng: lokasiLng,
-          jarak: jarakText,
+          lat: userLat,
+          lng: userLng,
+          jarak: userLat ? "GPS tersedia" : "-",
           created_at: serverTimestamp()
         });
 
@@ -329,7 +296,6 @@
         btnKirim.innerText = "KIRIM ABSENSI";
       }
     });
-
   </script>
 
 </body>
