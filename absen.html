@@ -4,8 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Absensi Karyawan</title>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #f1f5f9;
@@ -45,13 +49,20 @@
       color: #475569;
     }
 
-    input, select, button {
+    input,
+    select,
+    button {
       width: 100%;
       padding: 12px;
       border-radius: 8px;
       border: 1px solid #cbd5e1;
       font-size: 14px;
       outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #2563eb;
     }
 
     .camera-box {
@@ -67,7 +78,8 @@
       align-items: center;
     }
 
-    video, canvas {
+    video,
+    canvas {
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -95,37 +107,75 @@
       cursor: pointer;
     }
 
-    .btn-submit:hover { background: #1d4ed8; }
-    .btn-camera:hover { background: #334155; }
+    .btn-submit:hover {
+      background: #1d4ed8;
+    }
 
+    .btn-camera:hover {
+      background: #334155;
+    }
+
+    .btn-submit:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    /* KOTAK STATUS LOKASI */
     .info-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      padding: 10px;
+      padding: 12px;
       border-radius: 6px;
       font-size: 13px;
-      color: #64748b;
       margin-bottom: 15px;
       text-align: center;
+      font-weight: 600;
+    }
+
+    .info-box.loading {
+      background: #fef3c7;
+      border: 1px solid #fde047;
+      color: #854d0e;
+    }
+
+    .info-box.success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    .info-box.error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      cursor: pointer;
     }
   </style>
 </head>
+
 <body>
 
   <div class="card">
+
     <h2>📍 Absensi Karyawan</h2>
 
-    <div class="info-box" id="infoLokasi">
-      📡 Mendapatkan lokasi GPS...
+    <!-- STATUS GPS -->
+    <div class="info-box loading" id="infoLokasi" onclick="mintaAksesLokasi()">
+      ⏳ Mengambil lokasi GPS...
     </div>
 
     <form id="formAbsen">
+
+      <!-- NAMA -->
       <div class="form-group">
         <label>Nama Karyawan</label>
-        <input type="text" id="nama" placeholder="Masukkan nama lengkap" required>
+        <input
+          type="text"
+          id="nama"
+          placeholder="Masukkan nama lengkap"
+          required
+        >
       </div>
 
-      <!-- FITUR BARU: PILIHAN TIPE ABSENSI -->
+      <!-- TIPE ABSENSI -->
       <div class="form-group">
         <label>Tipe Absensi</label>
         <select id="tipeAbsen" required>
@@ -137,26 +187,44 @@
         </select>
       </div>
 
+      <!-- FOTO -->
       <div class="form-group">
         <label>Foto Selfie</label>
         <div class="camera-box">
           <video id="webcam" autoplay playsinline></video>
           <img id="photoPreview" alt="Hasil Foto">
         </div>
-        <button type="button" class="btn-camera" id="btnAmbilFoto" onclick="takeSnapshot()">📸 Ambil Foto Selfie</button>
+        <button
+          type="button"
+          class="btn-camera"
+          id="btnAmbilFoto"
+          onclick="takeSnapshot()">
+          📸 Ambil Foto Selfie
+        </button>
       </div>
 
-      <button type="submit" class="btn-submit" id="btnKirim">KIRIM ABSENSI</button>
+      <!-- KIRIM -->
+      <button
+        type="submit"
+        class="btn-submit"
+        id="btnKirim">
+        KIRIM ABSENSI
+      </button>
+
     </form>
+
   </div>
 
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script type="module">
+
+    /* ==========================================
+       FIREBASE CONFIG
+    ========================================== */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Konfigurasi Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
       authDomain: "absensi-lampung.firebaseapp.com",
@@ -170,11 +238,9 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // KOORDINAT KANTOR
-    const KANTOR_LAT = -6.220; 
-    const KANTOR_LNG = 106.721; 
-    const MAX_JARAK_METER = 200;
-
+    /* ==========================================
+       VARIABEL & ELEMENT
+    ========================================== */
     let userLat = null;
     let userLng = null;
     let fotoDataUrl = "";
@@ -183,35 +249,74 @@
     const canvas = document.getElementById("canvas");
     const photoPreview = document.getElementById("photoPreview");
     const btnAmbilFoto = document.getElementById("btnAmbilFoto");
+    const infoLokasi = document.getElementById("infoLokasi");
 
-    // Start Kamera Web/HP
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
-      .then(stream => { video.srcObject = stream; })
-      .catch(err => { alert("Gagal mengakses kamera: " + err.message); });
+    /* ==========================================
+       KAMERA
+    ========================================== */
+    navigator.mediaDevices
+      .getUserMedia({
+        video: { facingMode: "user" },
+        audio: false
+      })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert("Gagal mengakses kamera: " + err.message);
+      });
 
-    // Dapatkan Lokasi GPS
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        userLat = pos.coords.latitude;
-        userLng = pos.coords.longitude;
-        let jarak = hitungJarak(userLat, userLng, KANTOR_LAT, KANTOR_LNG);
-        document.getElementById("infoLokasi").innerHTML = `📍 Jarak Anda ke Kantor: <b>${Math.round(jarak)} meter</b>`;
-      }, err => {
-        document.getElementById("infoLokasi").innerText = "⚠️ Gagal mengambil lokasi. Aktifkan GPS HP Anda.";
-      }, { enableHighAccuracy: true });
-    }
+    /* ==========================================
+       FUNGSI DETEKSI LOKASI WAJIB
+    ========================================== */
+    window.mintaAksesLokasi = function() {
+      infoLokasi.className = "info-box loading";
+      infoLokasi.innerHTML = "⏳ Mengambil lokasi GPS...";
 
-    // Ambil Foto
+      if (!navigator.geolocation) {
+        infoLokasi.className = "info-box error";
+        infoLokasi.innerHTML = "❌ Browser Anda tidak mendukung GPS.";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          userLat = pos.coords.latitude;
+          userLng = pos.coords.longitude;
+
+          infoLokasi.className = "info-box success";
+          infoLokasi.innerHTML = `📍 Lokasi Terdeteksi:<br><strong>Lat: ${userLat.toFixed(5)}, Lng: ${userLng.toFixed(5)}</strong>`;
+        },
+        err => {
+          userLat = null;
+          userLng = null;
+          infoLokasi.className = "info-box error";
+          infoLokasi.innerHTML = "⚠️ Gagal mengambil lokasi! Aktifkan GPS HP & klik di sini untuk coba lagi.";
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    };
+
+    // Jalankan deteksi lokasi otomatis saat web pertama dibuka
+    mintaAksesLokasi();
+
+    /* ==========================================
+       AMBIL FOTO
+    ========================================== */
     window.takeSnapshot = function() {
       if (fotoDataUrl === "") {
         canvas.width = 300;
         canvas.height = 300;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        fotoDataUrl = canvas.toDataURL("image/jpeg", 0.5);
 
+        fotoDataUrl = canvas.toDataURL("image/jpeg", 0.5);
         photoPreview.src = fotoDataUrl;
+
         photoPreview.style.display = "block";
         video.style.display = "none";
         btnAmbilFoto.innerText = "🔄 Foto Ulang";
@@ -223,54 +328,40 @@
       }
     };
 
-    // Hitung Jarak (Haversine Formula)
-    function hitungJarak(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; 
-      const φ1 = lat1 * Math.PI / 180;
-      const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ/2) * Math.sin(Δλ/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c; 
-    }
-
-    // Submit Absensi
+    /* ==========================================
+       SUBMIT ABSENSI
+    ========================================== */
     document.getElementById("formAbsen").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      let nama = document.getElementById("nama").value.trim();
-      let tipe = document.getElementById("tipeAbsen").value;
+      const nama = document.getElementById("nama").value.trim();
+      const tipe = document.getElementById("tipeAbsen").value;
 
+      // VALIDASI 1: FOTO WAJIB
       if (!fotoDataUrl) {
-        return alert("Harap ambil foto selfie terlebih dahulu!");
-      }
-      if (!userLat || !userLng) {
-        return alert("Lokasi GPS belum terdeteksi. Pastikan GPS aktif dan beri izin browser.");
+        alert("Harap ambil foto selfie terlebih dahulu!");
+        return;
       }
 
-      let jarakM = hitungJarak(userLat, userLng, KANTOR_LAT, KANTOR_LNG);
-      
-      // Tentukan status berdasarkan tipe dan lokasi
+      // VALIDASI 2: LOKASI GPS WAJIB
+      if (userLat === null || userLng === null) {
+        alert("⚠️ Lokasi GPS belum terdeteksi!\n\nPastikan GPS HP kamu AKTIF, lalu ketuk kotak merah di bagian atas untuk mendeteksi ulang lokasi.");
+        mintaAksesLokasi();
+        return;
+      }
+
       let statusAbsen = "Hadir";
       if (tipe === "Izin" || tipe === "Sakit" || tipe === "Cuti") {
         statusAbsen = tipe;
-      } else if (jarakM > MAX_JARAK_METER) {
-        statusAbsen = "Ditolak (Luar Area)";
       }
 
-      let now = new Date();
-      let optionsTanggal = { day: 'numeric', month: 'short', year: 'numeric' };
-      let optionsJam = { hour: '2-digit', minute: '2-digit', hour12: false };
-      
-      let tglFormat = now.toLocaleDateString("id-ID", optionsTanggal);
-      let jamFormat = now.toLocaleTimeString("id-ID", optionsJam).replace('.', ':');
-      
-      // Format lengkap untuk field waktu agar dibaca sempurna oleh Dashboard
-      let waktuLengkap = `${tglFormat}, ${jamFormat}`;
+      const now = new Date();
+      const optionsTanggal = { day: "numeric", month: "short", year: "numeric" };
+      const optionsJam = { hour: "2-digit", minute: "2-digit", hour12: false };
+
+      const tglFormat = now.toLocaleDateString("id-ID", optionsTanggal);
+      const jamFormat = now.toLocaleTimeString("id-ID", optionsJam).replace(".", ":");
+      const waktuLengkap = `${tglFormat}, ${jamFormat}`;
 
       const btnKirim = document.getElementById("btnKirim");
       btnKirim.disabled = true;
@@ -279,26 +370,30 @@
       try {
         await addDoc(collection(db, "absensi"), {
           nama: nama,
-          tipe: tipe,                // Masuk / Pulang / Izin / Sakit / Cuti
-          status: statusAbsen,        // Hadir / Izin / Sakit / Cuti / Ditolak
-          waktu: waktuLengkap,        // Contoh: "16 Sep 2026, 10:45"
-          tanggal: now.toISOString().split('T')[0],
+          tipe: tipe,
+          status: statusAbsen,
+          waktu: waktuLengkap,
+          tanggal: now.toISOString().split("T")[0],
           jam: jamFormat,
           foto: fotoDataUrl,
           lat: userLat,
           lng: userLng,
-          jarak: `${Math.round(jarakM)} Meter`,
+          lokasi_link: `https://maps.google.com/?q=${userLat},${userLng}`,
           created_at: serverTimestamp()
         });
 
-        alert(`Absensi Berhasil dikirim! Status: ${statusAbsen}`);
+        alert(`✅ Absensi Berhasil!\n\nNama: ${nama}\nTipe: ${tipe}\nKoordinat: ${userLat}, ${userLng}`);
         location.reload();
+
       } catch (err) {
+        console.error(err);
         alert("Gagal menyimpan absensi: " + err.message);
         btnKirim.disabled = false;
         btnKirim.innerText = "KIRIM ABSENSI";
       }
     });
+
   </script>
+
 </body>
 </html>
