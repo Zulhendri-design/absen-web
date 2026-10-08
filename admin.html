@@ -63,10 +63,12 @@
       display: flex;
       gap: 10px;
       margin-bottom: 15px;
+      flex-wrap: wrap;
     }
 
     .form-karyawan input {
       flex: 1;
+      min-width: 180px;
     }
 
     .list-karyawan {
@@ -174,7 +176,8 @@
     <div class="karyawan-section">
       <h3>👥 Kelola Master Data Karyawan</h3>
       <form class="form-karyawan" onsubmit="tambahKaryawan(event)">
-        <input type="text" id="namaKaryawanBaru" placeholder="Masukkan Nama Karyawan Baru..." required>
+        <input type="text" id="nikKaryawanBaru" placeholder="Masukkan NIK..." required>
+        <input type="text" id="namaKaryawanBaru" placeholder="Masukkan Nama Karyawan..." required>
         <button type="submit" class="btn-tambah">➕ Tambah Karyawan</button>
       </form>
       <div class="list-karyawan" id="listKaryawan">
@@ -198,7 +201,7 @@
     </div>
 
     <div class="filter-box">
-      <input type="text" id="filterNama" placeholder="Cari Nama Karyawan..." oninput="filterData()">
+      <input type="text" id="filterNama" placeholder="Cari NIK atau Nama..." oninput="filterData()">
       <input type="date" id="filterTanggal" onchange="filterData()">
       <button class="btn-reset" onclick="resetFilter()">Reset Filter</button>
     </div>
@@ -208,6 +211,7 @@
         <tr>
           <th>No</th>
           <th>Foto</th>
+          <th>NIK</th>
           <th>Nama Karyawan</th>
           <th>Tanggal</th>
           <th>Jam Masuk</th>
@@ -219,7 +223,7 @@
         </tr>
       </thead>
       <tbody id="tabelAbsensi">
-        <tr><td colspan="10">Memuat data absensi...</td></tr>
+        <tr><td colspan="11">Memuat data absensi...</td></tr>
       </tbody>
     </table>
   </div>
@@ -227,7 +231,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, doc, deleteDoc, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDJmJXrF4IRqF5X_sD2SRJO7A6SVUGQTpk",
@@ -246,7 +250,6 @@
     let rawData = [];
     let processedData = [];
 
-    // Cek Status Login
     onAuthStateChanged(auth, (user) => {
       if (user) {
         loadData();
@@ -273,9 +276,10 @@
         } else {
           snapshot.forEach((docSnap) => {
             let item = docSnap.data();
+            let displayNik = item.nik ? `[${item.nik}] ` : '';
             listHtml += `
               <div class="chip-karyawan">
-                ${item.nama}
+                ${displayNik}${item.nama}
                 <span onclick="hapusKaryawan('${docSnap.id}', '${item.nama}')" title="Hapus Karyawan">✕</span>
               </div>
             `;
@@ -287,13 +291,18 @@
 
     window.tambahKaryawan = async function(e) {
       e.preventDefault();
-      const input = document.getElementById("namaKaryawanBaru");
-      const nama = input.value.trim();
-      if (!nama) return;
+      const inputNik = document.getElementById("nikKaryawanBaru");
+      const inputNama = document.getElementById("namaKaryawanBaru");
+      
+      const nik = inputNik.value.trim();
+      const nama = inputNama.value.trim();
+
+      if (!nik || !nama) return;
 
       try {
-        await addDoc(collection(db, "karyawan"), { nama: nama });
-        input.value = "";
+        await addDoc(collection(db, "karyawan"), { nik: nik, nama: nama });
+        inputNik.value = "";
+        inputNama.value = "";
       } catch (err) {
         alert("Gagal menambahkan karyawan: " + err.message);
       }
@@ -326,7 +335,7 @@
         prosesKelompokData();
       }, (err) => {
         console.error("Gagal load data: ", err);
-        document.getElementById("tabelAbsensi").innerHTML = `<tr><td colspan="10" style="color:red;">Gagal memuat data: ${err.message}</td></tr>`;
+        document.getElementById("tabelAbsensi").innerHTML = `<tr><td colspan="11" style="color:red;">Gagal memuat data: ${err.message}</td></tr>`;
       });
     }
 
@@ -337,13 +346,15 @@
         let tgl = d.tanggal || (d.waktu ? d.waktu.split(',')[0] : '-') || '-';
         let jam = d.jam || (d.waktu ? d.waktu.split(',')[1] : '-') || '-';
         let nama = d.nama || d.namaKaryawan || 'Tanpa Nama';
+        let nik = d.nik || '-';
         
-        let key = `${nama}_${tgl}`;
+        let key = `${nik}_${nama}_${tgl}`;
 
         if (!mapData[key]) {
           mapData[key] = {
             id_masuk: d.id,
             id_pulang: null,
+            nik: nik,
             nama: nama,
             tanggal: tgl,
             jam_masuk: jam,
@@ -370,7 +381,7 @@
       let countDitolak = 0;
 
       if (data.length === 0) {
-        isi = `<tr><td colspan="10">Belum ada data absensi.</td></tr>`;
+        isi = `<tr><td colspan="11">Belum ada data absensi.</td></tr>`;
       } else {
         data.forEach((d, index) => {
           if (d.status.includes("Ditolak") || d.status.includes("Luar")) {
@@ -388,6 +399,7 @@
           isi += `<tr>
             <td>${index + 1}</td>
             <td><img src="${fotoSrc}" class="img-selfie" onerror="this.src='https://via.placeholder.com/45'"></td>
+            <td><b>${d.nik}</b></td>
             <td><b>${d.nama}</b></td>
             <td>${d.tanggal}</td>
             <td><span class="badge badge-masuk">🟢 ${d.jam_masuk}</span></td>
@@ -407,13 +419,13 @@
     }
 
     window.filterData = function() {
-      let nama = document.getElementById("filterNama").value.toLowerCase();
+      let keyword = document.getElementById("filterNama").value.toLowerCase();
       let tgl = document.getElementById("filterTanggal").value;
 
       let filtered = processedData.filter(d => {
-        let matchNama = d.nama.toLowerCase().includes(nama);
+        let matchKeyword = d.nama.toLowerCase().includes(keyword) || d.nik.toLowerCase().includes(keyword);
         let matchTgl = tgl ? d.tanggal === tgl : true;
-        return matchNama && matchTgl;
+        return matchKeyword && matchTgl;
       });
 
       tampilkanTabel(filtered);
@@ -438,9 +450,9 @@
 
     window.downloadExcel = function() {
       if (processedData.length === 0) return alert("Tidak ada data!");
-      let csv = "Nama,Tanggal,Jam Masuk,Jam Pulang,Jarak,Status\n";
+      let csv = "NIK,Nama,Tanggal,Jam Masuk,Jam Pulang,Jarak,Status\n";
       processedData.forEach(d => {
-        csv += `"${d.nama}","${d.tanggal}","${d.jam_masuk}","${d.jam_pulang}","${d.jarak}","${d.status}"\n`;
+        csv += `"${d.nik}","${d.nama}","${d.tanggal}","${d.jam_masuk}","${d.jam_pulang}","${d.jarak}","${d.status}"\n`;
       });
       let blob = new Blob([csv], { type: 'text/csv' });
       let a = document.createElement('a');
