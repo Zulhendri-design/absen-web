@@ -112,11 +112,11 @@
     <h2>📍 Absensi Karyawan</h2>
 
     <div class="info-box" id="infoLokasi">
-      📍 Absensi dapat dilakukan dari mana saja.
+      📡 Mendeteksi Lokasi Saya...
     </div>
 
     <form id="formAbsen">
-      <!-- NAMA KARYAWAN (OTOMATIS DARI FIRESTORE) -->
+      <!-- NAMA KARYAWAN & NIK -->
       <div class="form-group">
         <label>Nama Karyawan</label>
         <select id="nama" required>
@@ -175,6 +175,7 @@
 
     let userLat = null;
     let userLng = null;
+    let lokasiAlamat = "Tidak Terdeteksi";
     let fotoDataUrl = "";
 
     const video = document.getElementById("webcam");
@@ -191,7 +192,8 @@
       } else {
         snapshot.forEach((docSnap) => {
           let item = docSnap.data();
-          selectNama.innerHTML += `<option value="${item.nama}">${item.nama}</option>`;
+          let label = item.nik ? `${item.nama} - (${item.nik})` : item.nama;
+          selectNama.innerHTML += `<option value="${item.nama}" data-nik="${item.nik || '-'}">${label}</option>`;
         });
       }
     });
@@ -201,18 +203,40 @@
       .then(stream => { video.srcObject = stream; })
       .catch(err => { alert("Gagal mengakses kamera: " + err.message); });
 
-    // GPS
+    // FUNGSI CONVERT LAT/LNG KE ALAMAT LENGKAP
+    async function dapatkanAlamat(lat, lng) {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+        const data = await response.json();
+        if (data && data.display_name) {
+          // Ambil nama area / jalan
+          return data.display_name;
+        } else {
+          return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        }
+      } catch (e) {
+        return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      }
+    }
+
+    // DETEKSI GPS & ALAMAT ASLI
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        pos => {
+        async (pos) => {
           userLat = pos.coords.latitude;
           userLng = pos.coords.longitude;
-          document.getElementById("infoLokasi").innerHTML = "📍 Lokasi terdeteksi. Absensi tetap dapat dilakukan dari mana saja.";
+          
+          document.getElementById("infoLokasi").innerHTML = "📍 Mengambil nama lokasi...";
+          
+          lokasiAlamat = await dapatkanAlamat(userLat, userLng);
+
+          document.getElementById("infoLokasi").innerHTML = `📍 <b>Lokasi Absen Saat Ini:</b><br>${lokasiAlamat}`;
         },
-        err => {
+        (err) => {
           userLat = null;
           userLng = null;
-          document.getElementById("infoLokasi").innerHTML = "🌐 Mode bebas lokasi. GPS tidak diperlukan untuk melakukan absensi.";
+          lokasiAlamat = "GPS Matikan/Ditolak";
+          document.getElementById("infoLokasi").innerHTML = "⚠️ GPS Tidak Aktif / Ditolak.";
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
       );
@@ -238,11 +262,13 @@
       }
     };
 
-    // SUBMIT
+    // SUBMIT FORM
     document.getElementById("formAbsen").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const nama = selectNama.value;
+      const selectedOption = selectNama.options[selectNama.selectedIndex];
+      const nama = selectedOption.value;
+      const nik = selectedOption.getAttribute("data-nik") || "-";
       const tipe = document.getElementById("tipeAbsen").value;
 
       if (!nama) {
@@ -275,6 +301,7 @@
       try {
         await addDoc(collection(db, "absensi"), {
           nama: nama,
+          nik: nik,
           tipe: tipe,
           status: statusAbsen,
           waktu: waktuLengkap,
@@ -283,11 +310,11 @@
           foto: fotoDataUrl,
           lat: userLat,
           lng: userLng,
-          jarak: userLat ? "GPS tersedia" : "-",
+          jarak: lokasiAlamat, // MENYIMPAN ALAMAT LOKASI SAAT ABSEN
           created_at: serverTimestamp()
         });
 
-        alert("✅ Absensi berhasil dikirim!\n\nNama: " + nama + "\nTipe: " + tipe + "\nWaktu: " + waktuLengkap);
+        alert("✅ Absensi berhasil dikirim!\n\nNama: " + nama + "\nLokasi: " + lokasiAlamat);
         location.reload();
       } catch (err) {
         console.error(err);
