@@ -176,8 +176,8 @@
     <div class="karyawan-section">
       <h3>👥 Kelola Master Data Karyawan</h3>
       <form class="form-karyawan" onsubmit="tambahKaryawan(event)">
-        <input type="text" id="nikKaryawanBaru" placeholder="Masukkan NIK..." required>
         <input type="text" id="namaKaryawanBaru" placeholder="Masukkan Nama Karyawan..." required>
+        <input type="text" id="nikKaryawanBaru" placeholder="Masukkan NIK..." required>
         <button type="submit" class="btn-tambah">➕ Tambah Karyawan</button>
       </form>
       <div class="list-karyawan" id="listKaryawan">
@@ -201,7 +201,7 @@
     </div>
 
     <div class="filter-box">
-      <input type="text" id="filterNama" placeholder="Cari NIK atau Nama..." oninput="filterData()">
+      <input type="text" id="filterNama" placeholder="Cari Nama atau NIK..." oninput="filterData()">
       <input type="date" id="filterTanggal" onchange="filterData()">
       <button class="btn-reset" onclick="resetFilter()">Reset Filter</button>
     </div>
@@ -211,8 +211,8 @@
         <tr>
           <th>No</th>
           <th>Foto</th>
-          <th>NIK</th>
           <th>Nama Karyawan</th>
+          <th>NIK</th>
           <th>Tanggal</th>
           <th>Jam Masuk</th>
           <th>Jam Pulang</th>
@@ -276,10 +276,10 @@
         } else {
           snapshot.forEach((docSnap) => {
             let item = docSnap.data();
-            let displayNik = item.nik ? `[${item.nik}] ` : '';
+            let displayNik = item.nik ? ` (${item.nik})` : '';
             listHtml += `
               <div class="chip-karyawan">
-                ${displayNik}${item.nama}
+                ${item.nama}${displayNik}
                 <span onclick="hapusKaryawan('${docSnap.id}', '${item.nama}')" title="Hapus Karyawan">✕</span>
               </div>
             `;
@@ -291,18 +291,18 @@
 
     window.tambahKaryawan = async function(e) {
       e.preventDefault();
-      const inputNik = document.getElementById("nikKaryawanBaru");
       const inputNama = document.getElementById("namaKaryawanBaru");
+      const inputNik = document.getElementById("nikKaryawanBaru");
       
-      const nik = inputNik.value.trim();
       const nama = inputNama.value.trim();
+      const nik = inputNik.value.trim();
 
-      if (!nik || !nama) return;
+      if (!nama || !nik) return;
 
       try {
-        await addDoc(collection(db, "karyawan"), { nik: nik, nama: nama });
-        inputNik.value = "";
+        await addDoc(collection(db, "karyawan"), { nama: nama, nik: nik });
         inputNama.value = "";
+        inputNik.value = "";
       } catch (err) {
         alert("Gagal menambahkan karyawan: " + err.message);
       }
@@ -348,14 +348,14 @@
         let nama = d.nama || d.namaKaryawan || 'Tanpa Nama';
         let nik = d.nik || '-';
         
-        let key = `${nik}_${nama}_${tgl}`;
+        let key = `${nama}_${nik}_${tgl}`;
 
         if (!mapData[key]) {
           mapData[key] = {
             id_masuk: d.id,
             id_pulang: null,
-            nik: nik,
             nama: nama,
+            nik: nik,
             tanggal: tgl,
             jam_masuk: jam,
             jam_pulang: "-",
@@ -399,8 +399,8 @@
           isi += `<tr>
             <td>${index + 1}</td>
             <td><img src="${fotoSrc}" class="img-selfie" onerror="this.src='https://via.placeholder.com/45'"></td>
-            <td><b>${d.nik}</b></td>
             <td><b>${d.nama}</b></td>
+            <td><b>${d.nik}</b></td>
             <td>${d.tanggal}</td>
             <td><span class="badge badge-masuk">🟢 ${d.jam_masuk}</span></td>
             <td><span class="badge badge-pulang">🔴 ${d.jam_pulang}</span></td>
@@ -450,9 +450,9 @@
 
     window.downloadExcel = function() {
       if (processedData.length === 0) return alert("Tidak ada data!");
-      let csv = "NIK,Nama,Tanggal,Jam Masuk,Jam Pulang,Jarak,Status\n";
+      let csv = "Nama,NIK,Tanggal,Jam Masuk,Jam Pulang,Jarak,Status\n";
       processedData.forEach(d => {
-        csv += `"${d.nik}","${d.nama}","${d.tanggal}","${d.jam_masuk}","${d.jam_pulang}","${d.jarak}","${d.status}"\n`;
+        csv += `"${d.nama}","${d.nik}","${d.tanggal}","${d.jam_masuk}","${d.jam_pulang}","${d.jarak}","${d.status}"\n`;
       });
       let blob = new Blob([csv], { type: 'text/csv' });
       let a = document.createElement('a');
